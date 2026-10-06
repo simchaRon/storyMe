@@ -5,3 +5,10 @@ __pycache__/
 node_modules/
 .expo/
 dist/
+# Voice test: practice sound files and real family recordings must never be committed
+tools/voice-test/practice-clips/
+tools/voice-test/clips/
+tools/voice-test/recordings/
+*.csv
+# Voice recordings made by users
+backend/media/

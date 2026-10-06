@@ -10,7 +10,8 @@
   - [Sequel](flow-sequel.md): make the next chapter.
   - [Stories](flow-stories.md): list, read, favorite, delete.
   - [Story prompt](flow-story-prompt.md): the Claude prompt and its errors.
-  - [Voice](flow-voice.md): placeholder.
+  - [Read it yourself](flow-recording.md): a person records a story, the child plays it.
+  - [Voice](flow-voice.md): placeholder for voice cloning.
   - [Hebrew voice test](flow-voice-test.md): free test with the family, rating page.
 - App flows:
   - [Mobile app](flow-mobile-app.md): startup, API client, login token, error messages.

@@ -20,7 +20,8 @@ The screen at `/story/<id>`. It shows one story in large, calm text. The user ca
 - The story number in the address must be a whole number. Anything else, or a missing story, shows "This story was not found."
 - Each story opens in a fresh screen, so an old story does not flash while the next chapter loads.
 - Back from a new chapter goes to Home, not to the previous chapter (the new chapter replaces the old screen). The library (Phase 5) lists all chapters.
-- The voice is the device voice, not the user's own voice. Voice cloning comes later. See [flow-voice.md](flow-voice.md).
+- Under the story there is a "Voices" card: recordings of people reading this story aloud, with Play, Delete and "Record your voice". See [flow-recording.md](flow-recording.md). Playing a recording stops the device voice, and the other way round.
+- "Read aloud" uses the device voice, not a person's voice. Voice cloning comes later. See [flow-voice.md](flow-voice.md).
 - If the device has no voice for the language, a message shows.
 - A sequel keeps the level, language and Torah mode of the first story.
 - Errors: daily limit (429), story deleted meanwhile (409), busy server, no connection.

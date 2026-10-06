@@ -130,3 +130,20 @@ class StoryOut(StorySummaryOut):
     content: str
     prompt: Optional[str]
     source_reference: Optional[str]
+
+
+# ---- Recordings ----
+class RecordingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    story_id: int
+    name: str
+    duration_seconds: float
+    size_bytes: int
+    created_at: datetime
+
+
+class RecordingUrlOut(BaseModel):
+    url: str  # path with a short-lived signature. Add the server address in front of it.
+    expires_in: int  # seconds

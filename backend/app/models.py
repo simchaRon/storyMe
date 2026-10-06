@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
@@ -87,6 +87,9 @@ class Story(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
 
     user: Mapped[User] = relationship(back_populates="stories")
+    recordings: Mapped[list["StoryRecording"]] = relationship(
+        back_populates="story", cascade="all, delete-orphan"
+    )
 
 
 class GenerationLog(Base):
@@ -99,3 +102,23 @@ class GenerationLog(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     units: Mapped[int] = mapped_column(default=1)  # 1, 2 or 3 (a longer story uses more)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
+
+
+class StoryRecording(Base):
+    """A person reading a story aloud. The audio file is on disk (see services/recording_store.py)."""
+
+    __tablename__ = "story_recordings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    story_id: Mapped[int] = mapped_column(ForeignKey("stories.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(60))  # whose voice, for example "Mom"
+    file_name: Mapped[str] = mapped_column(String(100))  # made by the server, never from the user
+    size_bytes: Mapped[int] = mapped_column(default=0)
+    duration_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+    # When the speaker agreed, and which consent text they saw. Set by the upload code, only after consent.
+    consent_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    consent_text_version: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
+
+    story: Mapped[Story] = relationship(back_populates="recordings")

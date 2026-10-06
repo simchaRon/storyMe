@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 import { getSecret, setSecret } from '../storage';
 import { detailText } from './errors';
 
@@ -59,6 +61,15 @@ export type Story = {
 
 export type StorySummary = Omit<Story, 'content' | 'source_reference'>;
 
+export type Recording = {
+  id: number;
+  story_id: number;
+  name: string;
+  duration_seconds: number;
+  size_bytes: number;
+  created_at: string;
+};
+
 export type GenerateInput = {
   keywords: string[];
   /** The story idea in the user's own words. At least one of keywords or prompt is needed. */
@@ -92,7 +103,9 @@ async function request<T>(
   const { method = 'GET', body, auth = true, timeoutMs = TIMEOUT_MS, signal } = opts;
   const sentToken = auth ? token : null;
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // A file upload (FormData) sets its own Content-Type with the right boundary. Do not set it here.
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (sentToken) headers.Authorization = `Bearer ${sentToken}`;
 
   // Stop waiting after a while (15 s, or longer for stories), so the app never hangs on a bad network.
@@ -109,7 +122,7 @@ async function request<T>(
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
       signal: controller.signal,
     });
   } catch {
@@ -169,4 +182,30 @@ export const api = {
   setFavorite: (id: number, is_favorite: boolean) =>
     request<StorySummary>(`/api/stories/${id}/favorite`, { method: 'PATCH', body: { is_favorite } }),
   deleteStory: (id: number) => request<void>(`/api/stories/${id}`, { method: 'DELETE' }),
+  listRecordings: (storyId: number, signal?: AbortSignal) =>
+    request<Recording[]>(`/api/stories/${storyId}/recordings`, { signal }),
+  /** Send a recording. `uri` is the file from the recorder (a file on phones, a blob address on web). */
+  uploadRecording: async (
+    storyId: number,
+    input: { uri: string; name: string; durationSeconds: number; consent: boolean },
+  ) => {
+    const form = new FormData();
+    if (Platform.OS === 'web') {
+      const blob = await (await fetch(input.uri)).blob();
+      form.append('file', blob, 'recording.webm');
+    } else {
+      // React Native reads the file from the phone when the form is sent.
+      form.append('file', { uri: input.uri, name: 'recording.m4a', type: 'audio/mp4' } as unknown as Blob);
+    }
+    form.append('name', input.name);
+    form.append('duration_seconds', String(input.durationSeconds));
+    form.append('consent', input.consent ? 'true' : 'false');
+    return request<Recording>(`/api/stories/${storyId}/recordings`, { method: 'POST', body: form, timeoutMs: 120000 });
+  },
+  /** A short-lived address a player can use without a login header. */
+  recordingUrl: async (recordingId: number) => {
+    const data = await request<{ url: string; expires_in: number }>(`/api/recordings/${recordingId}/url`);
+    return `${API_URL}${data.url}`;
+  },
+  deleteRecording: (recordingId: number) => request<void>(`/api/recordings/${recordingId}`, { method: 'DELETE' }),
 };

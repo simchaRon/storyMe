@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -56,3 +58,37 @@ def get_current_user(
     if user is None:
         raise unauthorized
     return user
+
+
+# A recording link must stay valid while the audio plays (the player asks for pieces of the file),
+# but not much longer: the signature is in the address.
+AUDIO_TOKEN_MINUTES = 5
+_AUDIO_PURPOSE = "recording-audio"
+
+
+def _audio_key() -> str:
+    """A key made from the login secret, but different from it. A leaked link cannot be used to guess
+    the login secret, and a login token can never be a recording link."""
+    return hmac.new(settings.jwt_secret.encode(), b"dreamtale/recording-audio/v1", hashlib.sha256).hexdigest()
+
+
+def create_audio_token(recording_id: int, user_id: int) -> str:
+    """A short-lived signature for one recording. It lets an audio player fetch the file without an
+    Authorization header (web players cannot send one). It is not an access token: it has no `sub`."""
+    exp = datetime.now(timezone.utc) + timedelta(minutes=AUDIO_TOKEN_MINUTES)
+    payload = {"purpose": _AUDIO_PURPOSE, "rec": recording_id, "uid": user_id, "exp": exp}
+    return jwt.encode(payload, _audio_key(), algorithm=ALGORITHM)
+
+
+def check_audio_token(token: str, recording_id: int) -> int:
+    """Returns the user id the token was made for, or raises 403."""
+    forbidden = HTTPException(status.HTTP_403_FORBIDDEN, "This link is not valid or has expired")
+    try:
+        payload = jwt.decode(
+            token, _audio_key(), algorithms=[ALGORITHM], options={"require": ["exp", "rec", "uid", "purpose"]}
+        )
+        if payload["purpose"] != _AUDIO_PURPOSE or payload["rec"] != recording_id:
+            raise forbidden
+        return int(payload["uid"])
+    except (jwt.PyJWTError, ValueError, TypeError):
+        raise forbidden

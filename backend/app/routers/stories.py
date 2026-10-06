@@ -12,6 +12,7 @@ from ..limiter import limiter
 from ..models import GenerationLog, Story, User, UserSettings
 from ..schemas import FavoriteIn, SequelIn, StoryGenerateIn, StoryOut, StorySummaryOut
 from ..security import get_current_user
+from ..services import recording_store
 from ..services.story_generator import (
     PreviousChapter,
     StoryGenerationError,
@@ -242,6 +243,8 @@ def delete_story(story_id: int, user: User = Depends(get_current_user), db: Sess
         new_root.root_story_id = None
         for chapter in rest:
             chapter.root_story_id = new_root.id
+    recording_files = [r.file_name for r in story.recordings]  # the rows go with the story. The files must be removed too.
     db.delete(story)
     db.commit()
+    recording_store.delete_files(user.id, recording_files)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

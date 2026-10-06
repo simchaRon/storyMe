@@ -8,12 +8,15 @@ backend/
     database.py        Engine, session, SQLite foreign keys on
     models.py          User, UserSettings, Story, GenerationLog (quota), UTC date type
     defaults.py        Default child age (6) and story length (3 minutes)
+    middleware.py      Upload size limit, hides link signatures in logs
+    textclean.py       Cleaning of text before it goes into a Claude prompt
     schemas.py         Request and response shapes
     security.py        Password hash, JWT, current user
     limiter.py         Rate limiter (slowapi)
     routers/           auth, settings, stories, voice
     services/
       story_generator.py   Talks to Claude
+      recording_store.py   Voice recording files on disk
   tests/               pytest. Claude is faked.
   requirements.txt
   .env.example
@@ -23,12 +26,12 @@ tools/voice-test/      Blind rating page for the Hebrew voice test (plain HTML a
 
 ```
 mobile/                Expo app (iOS, Android, Web)
-  app/                 Screens (expo-router): _layout, index (home), auth, settings, create, story/[id], library
+  app/                 Screens (expo-router): _layout, index (home), auth, settings, create, story/[id], record/[id], library
   src/
     api/               client.ts (calls, token), errors.ts and errorMessage.ts (error texts)
     auth/              AuthProvider and useAuth()
     i18n/              English and Hebrew text, RTL switch, restart
-    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard
+    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard, RecordingsCard
     keywords.ts        Keyword rules (same as the backend)
     storyOptions.ts    Age and length choices and defaults (6, 3 minutes)
     library.ts         Groups chapters into series

@@ -60,7 +60,11 @@ phonikud__stock__p4.wav
 Put all clips in one folder. Candidate and voice names have no spaces.
 
 ## Step 3: rate the clips (blind)
-1. Open `tools/voice-test/rate.html` in the browser (double-click it).
+1. Open the page. It is not a program to "run". It is a web page file on your computer:
+   - In Windows File Explorer, go to `C:\Users\Lenovo\Projects\claude-code\storyMe\tools\voice-test`.
+   - Double-click **`rate.html`**. It opens in your browser (Edge or Chrome). If it opens in another program, right-click it, choose "Open with", and pick Edge or Chrome.
+   - In VS Code you can right-click the file and choose "Reveal in File Explorer".
+   - **Practice first:** the folder `tools/voice-test/practice-clips` has 3 sample sound files (made with the built-in English Windows voice, only to try the page). Click "Choose files", select all 3, rate them, save the CSV, and click "Reveal names".
 2. Type your name. Choose all the clips. The page mixes them and hides which service made each one.
 3. Listen to each clip and give 1 to 5 for: clear words, correct pronunciation and stress, natural rhythm for listening, and (for clones) "sounds like the real person". Write any word that sounded wrong.
 4. Click "Save the ratings (CSV)". Each rater saves their own file.

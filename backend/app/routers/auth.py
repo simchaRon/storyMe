@@ -7,6 +7,7 @@ from ..database import get_db
 from ..limiter import limiter
 from ..models import User, UserSettings
 from ..schemas import LoginIn, RegisterIn, TokenOut, UserOut
+from ..services import recording_store
 from ..security import (
     DUMMY_HASH,
     create_access_token,
@@ -57,6 +58,8 @@ def me(user: User = Depends(get_current_user)):
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_id = user.id
     db.delete(user)
     db.commit()
+    recording_store.delete_user_folder(user_id)  # all of the user's recordings
     return Response(status_code=status.HTTP_204_NO_CONTENT)

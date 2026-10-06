@@ -15,7 +15,7 @@ DreamTale AI (folder `storyMe`): a bedtime story app for children. Claude writes
 | 3. Brand and Settings | Done (logo, login and register, Settings screen, restart button). 7 app tests pass, it type checks and builds for web. Not checked by eye in a browser or on a phone. |
 | 4. Story generator and viewer | Built. 11 app tests pass, type checks, builds for web. Real Claude tested on the backend. Not checked by eye in the app yet. |
 | 5. Library and favorites | Done (tabs, series cards, heart, delete, load more). Reviewed with the `code-reviewer`, findings fixed. 33 app tests and 66 backend tests pass. Not checked by eye. |
-| 6. Voice cloning | Not started. Needs a decision. See the voice section. |
+| 6. Voice | "Read it yourself" (a person records a story, the child plays it) is built and reviewed, not tested on a phone. Voice cloning is not started. See the voice section. |
 
 ## Rules for working here
 - Talk in simple English, short sentences. Short replies.
@@ -122,3 +122,9 @@ Decisions from the owner: there is no provider yet. The user records the voice i
 - This computer has no GPU (Intel UHD 620, 32 GB RAM, no ffmpeg). Open-source cloning models such as QwenTTS-he (Apache-2.0, needs Hebrew text turned into IPA first) need a GPU. A free Google Colab GPU is the likely way to try them. Not set up. Do not write code for that model from memory: read its page first.
 - A free alternative that needs no cloning and no provider: **"Read it yourself"**. A parent records their reading of a story in the app (expo-audio or expo-av, check the SDK 57 docs), the app keeps the file with the story, and the child plays it in the story viewer. The real voice, perfect Hebrew, free. This fits the tagline "Magical bedtime stories in your voice". Decide this after the family test, or earlier if the owner wants it.
 - Free tiers of voice services usually forbid commercial use. A test is fine. A product needs a licence that allows it.
+
+### Update 2026-10-06 (later): "Read it yourself" is built
+- The owner chose the no-cloning option. It is built: [flow-recording.md](flow-recording.md). Check it on real phones first.
+- Facts found about cloning (official pages, 2026-10-06): the ElevenLabs free plan has **no voice cloning and no API**. Cloning starts at the Starter plan ($6 a month, $1 for the first month at the time). The Cartesia free plan has no cloning either (cloning from its $5 Pro plan, Hebrew support not confirmed). Chatterbox Multilingual (MIT licence, `pip install chatterbox-tts`, Python 3.11, supports Hebrew `he`, clones from a short reference file, runs on CPU but slowly) is the main free open-source option. Its output carries an inaudible watermark. Its Hebrew quality is **not verified**. An older independent test (March 2025) of the first Chatterbox found poor Hebrew, but that was before the multilingual model.
+- Free cloning for **English** is easier: open-source models you run yourself (Chatterbox is MIT). Hosted free tiers do not clone. A GPU server costs money. Other open models (XTTS, F5-TTS, OpenVoice) were not checked here: read their licences before use, some forbid commercial use.
+- If cloning is wanted later: install Chatterbox in its own folder (several GB), clone from a 20 to 30 second recording, let the family listen (no forms needed), and only then build the app part. Generating a story takes minutes on this computer (no GPU), so it must run in the background and be saved.

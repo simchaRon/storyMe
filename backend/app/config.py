@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     claude_model: str = "claude-sonnet-5-5"
     cors_origins: str = "http://localhost:8081,http://localhost:19006"
     daily_story_limit: int = 20
+    # Voice recordings (a parent reads a story aloud). Files live on disk under media_dir.
+    media_dir: str = "./media"
+    max_recording_mb: int = 25  # one recording
+    max_recordings_per_story: int = 5
+    max_user_media_mb: int = 300  # all recordings of one user
 
     @field_validator("jwt_secret")
     @classmethod

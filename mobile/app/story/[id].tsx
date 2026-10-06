@@ -13,6 +13,7 @@ import { BedtimeLoader } from '../../src/ui/BedtimeLoader';
 import { Button } from '../../src/ui/Button';
 import { Card } from '../../src/ui/Card';
 import { RequireAuth } from '../../src/ui/RequireAuth';
+import { RecordingsCard } from '../../src/ui/RecordingsCard';
 import { Screen } from '../../src/ui/Screen';
 
 export default function StoryScreen() {
@@ -35,6 +36,7 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
   const [voiceOn, setVoiceOn] = useState(true); // from Settings. If Settings cannot load, show the button.
   const [speaking, setSpeaking] = useState(false);
   const [writing, setWriting] = useState(false); // writing the next chapter
+  const [stopRecordingsToken, setStopRecordingsToken] = useState(0); // bump it to stop a playing recording
 
   const alive = useRef(true);
   const inFlight = useRef(false);
@@ -86,6 +88,7 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
     if (!story) return;
     const mine = ++speechRun.current;
     setError(null);
+    setStopRecordingsToken((n) => n + 1); // the device voice and a recording must not play together
     if (!(await hasVoiceFor(story.language))) {
       if (alive.current && mine === speechRun.current) setError(t('story.noVoice'));
       return;
@@ -199,6 +202,7 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
               onPress={() => (speaking ? stopSpeech() : void startSpeech())}
             />
           )}
+          <RecordingsCard storyId={story.id} onPlayStart={stopSpeech} stopToken={stopRecordingsToken} />
           <Button label={t('story.sequel')} variant="accent" onPress={() => void createSequel()} />
         </>
       )}

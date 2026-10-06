@@ -28,7 +28,13 @@
     "plugins": [
       "expo-router",
       "expo-localization",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "DreamTale AI uses the microphone so you can record yourself reading a bedtime story."
+        }
+      ]
     ]
   }
 }

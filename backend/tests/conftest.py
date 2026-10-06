@@ -53,6 +53,15 @@ class FakeGenerator:
         )
 
 
+@pytest.fixture(autouse=True)
+def media_dir(tmp_path, monkeypatch):
+    """Recordings go to a temporary folder, never to the real media folder."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "media_dir", str(tmp_path / "media"))
+    return tmp_path / "media"
+
+
 @pytest.fixture
 def fake_generator():
     return FakeGenerator()
