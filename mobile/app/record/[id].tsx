@@ -1,12 +1,3 @@
-import {
-  RecordingPresets,
-  requestRecordingPermissionsAsync,
-  setAudioModeAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
-  useAudioRecorder,
-  useAudioRecorderState,
-} from 'expo-audio';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,17 +6,15 @@ import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { api, ApiError, Story } from '../../src/api/client';
 import { errorMessage } from '../../src/api/errorMessage';
 import { formatDuration, MAX_RECORDING_SECONDS, MIN_RECORDING_SECONDS } from '../../src/audioFormat';
-import { discardRecordingFile } from '../../src/recordingFile';
 import { getItem, setItem } from '../../src/storage';
 import { colors, fonts, radius, spacing, storyLineHeight, touch } from '../../src/theme';
+import { useSpeechRecorder } from '../../src/useSpeechRecorder';
 import { Button } from '../../src/ui/Button';
 import { Card } from '../../src/ui/Card';
 import { RequireAuth } from '../../src/ui/RequireAuth';
 import { Screen } from '../../src/ui/Screen';
 
 const NAME_KEY = 'dreamtale.voiceName';
-
-type Phase = 'ready' | 'recording' | 'review' | 'saving';
 
 export default function RecordScreen() {
   const { id } = useLocalSearchParams<{ id: string | string[] }>();
@@ -45,28 +34,11 @@ function RecordContent({ rawId }: { rawId: string | undefined }) {
   const [story, setStory] = useState<Story | null>(null);
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(false);
-  const [phase, setPhase] = useState<Phase>('ready');
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordedUri, setRecordedUri] = useState<string | null>(null);
-  const [recordedSeconds, setRecordedSeconds] = useState(0);
+  const saveBusy = useRef(false); // blocks a second tap on Save
 
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const recorderState = useAudioRecorderState(recorder);
-  const lastSeconds = useRef(0); // the length so far, kept for when the recorder stops
-  const keptUri = useRef<string | null>(null); // the recorded file on the phone, so it can always be deleted
-  const alive = useRef(true);
-  const busy = useRef(false); // blocks double taps
-
-  // To listen to the recording before saving it.
-  const player = useAudioPlayer(phase === 'review' || phase === 'saving' ? recordedUri : null);
-  const playerStatus = useAudioPlayerStatus(player);
-
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
+  const rec = useSpeechRecorder({ minSeconds: MIN_RECORDING_SECONDS, maxSeconds: MAX_RECORDING_SECONDS });
 
   // The story text, so the reader can read it from the screen.
   useEffect(() => {
@@ -86,144 +58,53 @@ function RecordContent({ rawId }: { rawId: string | undefined }) {
 
   // Remember the last name used on this device ("Mom"), so it does not need to be typed again.
   useEffect(() => {
+    let current = true;
     void getItem(NAME_KEY).then((saved) => {
-      if (saved && alive.current) setName((current) => current || saved);
+      if (saved && current) setName((old) => old || saved);
     });
-  }, []);
-
-  useEffect(() => {
-    if (phase === 'recording') lastSeconds.current = recorderState.durationMillis / 1000;
-  }, [phase, recorderState.durationMillis]);
-
-  // Stop by itself at the longest length.
-  useEffect(() => {
-    if (phase === 'recording' && recorderState.durationMillis / 1000 >= MAX_RECORDING_SECONDS) void stop();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, recorderState.durationMillis]);
-
-  // When the user leaves this screen: stop the microphone if it is on, put the audio mode back for
-  // playback, and delete the recorded file from the phone (it was either uploaded or thrown away).
-  useEffect(() => {
     return () => {
-      try {
-        if (recorder.isRecording) void recorder.stop();
-      } catch {
-        /* nothing to stop */
-      }
-      void setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
-      discardRecordingFile(keptUri.current);
-      keptUri.current = null;
+      current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function start() {
-    if (busy.current) return;
     setError(null);
     if (!name.trim()) return setError(t('record.needName'));
     if (!consent) return setError(t('record.needConsent'));
-    busy.current = true;
-    try {
-      const permission = await requestRecordingPermissionsAsync();
-      if (!alive.current) return; // the user left while the phone asked for permission
-      if (!permission.granted) return setError(t('record.noPermission'));
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-      await recorder.prepareToRecordAsync();
-      if (!alive.current) {
-        // The user left while the recorder was getting ready. The microphone must stay off.
-        void setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
-        return;
-      }
-      lastSeconds.current = 0;
-      recorder.record();
-      setPhase('recording');
-    } catch {
-      setError(t('record.failed'));
-    } finally {
-      busy.current = false;
-    }
-  }
-
-  async function stop() {
-    if (busy.current) return;
-    busy.current = true;
-    try {
-      await recorder.stop();
-      // The length from the recorder itself is more exact than the one we counted while recording.
-      const seconds = Math.max(lastSeconds.current, recorder.getStatus().durationMillis / 1000);
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }); // play through the speaker
-      const uri = recorder.uri;
-      if (!alive.current) return;
-      if (!uri) throw new Error('no file');
-      keptUri.current = uri; // from now on it is deleted when we are done with it
-      if (seconds < MIN_RECORDING_SECONDS) {
-        discardRecordingFile(uri);
-        keptUri.current = null;
-        setPhase('ready');
-        return setError(t('record.tooShort'));
-      }
-      setRecordedUri(uri);
-      setRecordedSeconds(seconds);
-      setPhase('review');
-    } catch {
-      if (alive.current) {
-        setPhase('ready');
-        setError(t('record.failed'));
-      }
-    } finally {
-      busy.current = false;
-    }
-  }
-
-  function togglePlay() {
-    if (playerStatus.playing) {
-      player.pause();
-      return;
-    }
-    if (playerStatus.didJustFinish || (playerStatus.duration > 0 && playerStatus.currentTime >= playerStatus.duration)) {
-      void player.seekTo(0);
-    }
-    player.play();
-  }
-
-  function recordAgain() {
-    player.pause();
-    discardRecordingFile(keptUri.current);
-    keptUri.current = null;
-    setRecordedUri(null);
-    setError(null);
-    setPhase('ready');
+    await rec.start();
   }
 
   async function save() {
-    if (busy.current || storyId === null || !recordedUri) return;
-    busy.current = true;
-    player.pause();
-    setPhase('saving');
+    if (saveBusy.current || storyId === null || !rec.uri) return;
+    saveBusy.current = true;
+    rec.pause();
+    setSaving(true);
     setError(null);
     try {
       await api.uploadRecording(storyId, {
-        uri: recordedUri,
+        uri: rec.uri,
         name: name.trim(),
-        durationSeconds: Math.round(recordedSeconds),
+        durationSeconds: Math.round(rec.finalSeconds),
         consent,
       });
       void setItem(NAME_KEY, name.trim());
-      discardRecordingFile(keptUri.current); // it is on the server now
-      keptUri.current = null;
-      if (alive.current) router.canGoBack() ? router.back() : router.replace({ pathname: '/story/[id]', params: { id: String(storyId) } });
+      rec.releaseFile(); // it is on the server now
+      if (rec.isAlive()) {
+        router.canGoBack() ? router.back() : router.replace({ pathname: '/story/[id]', params: { id: String(storyId) } });
+      }
     } catch (e) {
-      if (alive.current) {
-        setPhase('review');
+      if (rec.isAlive()) {
+        setSaving(false);
         setError(errorMessage(t, e, { 409: 'record.tooMany', 413: 'record.tooBig', 415: 'record.badFile' }));
       }
     } finally {
-      busy.current = false;
+      saveBusy.current = false;
     }
   }
 
-  const recording = phase === 'recording';
-  const seconds = recording ? recorderState.durationMillis / 1000 : recordedSeconds;
+  const recording = rec.phase === 'recording';
+  const review = rec.phase === 'review';
+  const shownError = error ?? (rec.problem ? t(rec.problem) : null);
   const rtl = story?.language === 'he';
 
   return (
@@ -232,7 +113,7 @@ function RecordContent({ rawId }: { rawId: string | undefined }) {
         {t('record.title')}
       </Text>
 
-      {phase === 'ready' && (
+      {rec.phase === 'ready' && (
         <Card style={styles.card}>
           <Text style={styles.label}>{t('record.nameLabel')}</Text>
           <TextInput
@@ -259,34 +140,30 @@ function RecordContent({ rawId }: { rawId: string | undefined }) {
         </Card>
       )}
 
-      {error && (
+      {shownError && (
         <Text accessibilityRole="alert" style={styles.error}>
-          {error}
+          {shownError}
         </Text>
       )}
 
-      {(recording || phase === 'review' || phase === 'saving') && (
+      {(recording || review) && (
         <Text accessibilityLiveRegion="polite" style={styles.timer}>
-          {recording ? t('record.recording') : t('record.review')} · {formatDuration(seconds)}
+          {recording ? t('record.recording') : t('record.review')} · {formatDuration(recording ? rec.liveSeconds : rec.finalSeconds)}
         </Text>
       )}
 
-      {phase === 'ready' && <Button label={t('record.start')} variant="accent" onPress={() => void start()} />}
-      {recording && <Button label={t('record.stop')} variant="danger" onPress={() => void stop()} />}
-      {(phase === 'review' || phase === 'saving') && (
+      {rec.phase === 'ready' && <Button label={t('record.start')} variant="accent" onPress={() => void start()} />}
+      {recording && <Button label={t('record.stop')} variant="danger" onPress={() => void rec.stop()} />}
+      {review && (
         <View style={styles.controls}>
           <Button
-            label={t(playerStatus.playing ? 'record.pause' : 'record.play')}
+            label={t(rec.playing ? 'record.pause' : 'record.play')}
             variant="secondary"
-            disabled={phase === 'saving'}
-            onPress={togglePlay}
+            disabled={saving}
+            onPress={rec.togglePlay}
           />
-          <Button
-            label={t(phase === 'saving' ? 'record.saving' : 'record.save')}
-            disabled={phase === 'saving'}
-            onPress={() => void save()}
-          />
-          <Button label={t('record.again')} variant="secondary" disabled={phase === 'saving'} onPress={recordAgain} />
+          <Button label={t(saving ? 'record.saving' : 'record.save')} disabled={saving} onPress={() => void save()} />
+          <Button label={t('record.again')} variant="secondary" disabled={saving} onPress={rec.discard} />
         </View>
       )}
 

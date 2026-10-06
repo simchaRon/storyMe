@@ -1,5 +1,6 @@
 import Slider from '@react-native-community/slider';
 import * as Speech from 'expo-speech';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, StyleSheet, Switch, Text, View } from 'react-native';
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
 function SettingsContent() {
   const { t, i18n } = useTranslation();
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [level, setLevel] = useState(2); // follows the slider while dragging
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +169,7 @@ function SettingsContent() {
               </Text>
             )}
             <Text style={styles.note}>{t('settings.voiceNote')}</Text>
+            <Button label={t('clone.manageVoices')} variant="secondary" onPress={() => router.push('/voices')} />
           </Card>
 
           <Card style={styles.card}>

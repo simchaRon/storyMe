@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse
 from .config import settings
 
 # Only the recording upload gets this check. Other requests are small JSON.
-_UPLOAD_PATH = re.compile(r"^/api/stories/\d+/recordings$")
+_RECORDING_PATH = re.compile(r"^/api/stories/\d+/recordings$")
+_VOICE_PATH = re.compile(r"^/api/voices$")
 _OVERHEAD = 64 * 1024  # form fields and boundaries around the file
 
 
@@ -25,10 +26,14 @@ class MaxBodySizeMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["method"] != "POST" or not _UPLOAD_PATH.match(scope["path"]):
+        if scope["type"] != "http" or scope["method"] != "POST":
             return await self.app(scope, receive, send)
-
-        limit = settings.max_recording_mb * 1024 * 1024 + _OVERHEAD
+        if _RECORDING_PATH.match(scope["path"]):
+            limit = settings.max_recording_mb * 1024 * 1024 + _OVERHEAD
+        elif _VOICE_PATH.match(scope["path"]):
+            limit = settings.max_voice_sample_mb * 1024 * 1024 + _OVERHEAD
+        else:
+            return await self.app(scope, receive, send)
         declared = dict(scope["headers"]).get(b"content-length", b"")
         if declared.isdigit() and int(declared) > limit:
             response = JSONResponse({"detail": "The recording is too big"}, status_code=413)

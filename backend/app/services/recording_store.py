@@ -55,16 +55,21 @@ def sniff_extension(data: bytes) -> Optional[str]:
     return None
 
 
-def _root() -> Path:
-    """The folder for all recordings. Not created here, so deleting never makes empty folders."""
-    return Path(settings.media_dir).resolve() / "recordings"
+# Folders under MEDIA_DIR: people reading stories, voice samples for cloning, and audio made with a cloned voice.
+KINDS = ("recordings", "voices", "narrations")
 
 
-def user_dir(user_id: int) -> Path:
-    return _root() / str(int(user_id))
+def _root(kind: str = "recordings") -> Path:
+    """The folder for one kind of file. Not created here, so deleting never makes empty folders."""
+    assert kind in KINDS
+    return Path(settings.media_dir).resolve() / kind
 
 
-def save_stream(user_id: int, source: BinaryIO, max_bytes: int) -> tuple[str, int]:
+def user_dir(user_id: int, kind: str = "recordings") -> Path:
+    return _root(kind) / str(int(user_id))
+
+
+def save_stream(user_id: int, source: BinaryIO, max_bytes: int, kind: str = "recordings") -> tuple[str, int]:
     """Copy an upload to disk piece by piece (never all in memory). Returns (file name, size).
 
     Raises NotAudio before anything is written if the first bytes are not audio, and TooBig
@@ -74,7 +79,7 @@ def save_stream(user_id: int, source: BinaryIO, max_bytes: int) -> tuple[str, in
     extension = sniff_extension(head)
     if extension is None:
         raise NotAudio()
-    folder = user_dir(user_id)
+    folder = user_dir(user_id, kind)
     folder.mkdir(parents=True, exist_ok=True)
     name = f"{uuid.uuid4().hex}.{extension}"
     path = folder / name
@@ -98,9 +103,19 @@ def save_stream(user_id: int, source: BinaryIO, max_bytes: int) -> tuple[str, in
     return name, total
 
 
-def path_for(user_id: int, file_name: str) -> Path:
+def save_bytes(user_id: int, data: bytes, extension: str, kind: str) -> str:
+    """Write a file the server made itself (for example the audio made with a cloned voice)."""
+    assert extension in CONTENT_TYPES
+    folder = user_dir(user_id, kind)
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{uuid.uuid4().hex}.{extension}"
+    (folder / name).write_bytes(data)
+    return name
+
+
+def path_for(user_id: int, file_name: str, kind: str = "recordings") -> Path:
     """The full path of a stored file. Refuses anything that would leave the user's folder."""
-    folder = user_dir(user_id).resolve()
+    folder = user_dir(user_id, kind).resolve()
     path = (folder / file_name).resolve()
     if path.parent != folder:
         raise ValueError("bad file name")
@@ -111,39 +126,41 @@ def content_type_for(file_name: str) -> str:
     return CONTENT_TYPES.get(file_name.rsplit(".", 1)[-1].lower(), "application/octet-stream")
 
 
-def delete_files(user_id: int, file_names: list[str]) -> None:
+def delete_files(user_id: int, file_names: list[str], kind: str = "recordings") -> None:
     """Remove files. A missing file is not an error. A real failure is logged and the rest go on.
     The start-up sweep removes anything that is left."""
     for file_name in file_names:
         try:
-            path_for(user_id, file_name).unlink(missing_ok=True)
+            path_for(user_id, file_name, kind).unlink(missing_ok=True)
         except (ValueError, OSError):
             log.warning("Could not delete recording file %s of user %s", file_name, user_id, exc_info=True)
 
 
 def delete_user_folder(user_id: int) -> None:
-    folder = user_dir(user_id)
-    if not folder.is_dir():
-        return
-    for child in folder.iterdir():
+    """Remove everything of a user: recordings, voice samples and audio made with their voices."""
+    for kind in KINDS:
+        folder = user_dir(user_id, kind)
+        if not folder.is_dir():
+            continue
+        for child in folder.iterdir():
+            try:
+                child.unlink(missing_ok=True)
+            except OSError:
+                log.warning("Could not delete %s of user %s", child.name, user_id, exc_info=True)
         try:
-            child.unlink(missing_ok=True)
+            folder.rmdir()
         except OSError:
-            log.warning("Could not delete %s of user %s", child.name, user_id, exc_info=True)
-    try:
-        folder.rmdir()
-    except OSError:
-        log.warning("Recording folder of user %s is not empty after the delete", user_id)
+            log.warning("The %s folder of user %s is not empty after the delete", kind, user_id)
 
 
-def sweep_orphans(known: dict[int, set[str]], min_age_seconds: float = 3600) -> list[str]:
+def sweep_orphans(known: dict[int, set[str]], min_age_seconds: float = 3600, kind: str = "recordings") -> list[str]:
     """Delete recording files that no database row points to (left by a crash or a failed delete).
 
     `known` maps a user id to the file names that have a row. Files younger than `min_age_seconds`
     are kept, because an upload may be writing them right now. Returns the removed paths.
     """
     removed: list[str] = []
-    root = _root()
+    root = _root(kind)
     if not root.is_dir():
         return removed
     now = time.time()

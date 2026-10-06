@@ -27,7 +27,7 @@ for (const dir of ['app', 'src']) {
   for (const file of sourceFiles(join(root, dir))) {
     const text = readFileSync(file, 'utf8');
     // t('a.b'), and key strings such as 'settings.level1' or { 401: 'auth.wrongCredentials' }
-    for (const m of text.matchAll(/['"`]((?:app|common|home|language|auth|settings|create|story|library|record|errors)\.[A-Za-z0-9]+)['"`]/g)) {
+    for (const m of text.matchAll(/['"`]((?:app|common|home|language|auth|settings|create|story|library|record|clone|errors)\.[A-Za-z0-9]+)['"`]/g)) {
       used.add(m[1]);
     }
   }

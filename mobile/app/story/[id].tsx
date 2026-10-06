@@ -9,10 +9,12 @@ import { errorMessage } from '../../src/api/errorMessage';
 import { hasVoiceFor } from '../../src/speech';
 import { speechParts } from '../../src/speechText';
 import { colors, fonts, spacing, storyLineHeight } from '../../src/theme';
+import { useAudioPlayback } from '../../src/useAudioPlayback';
 import { BedtimeLoader } from '../../src/ui/BedtimeLoader';
 import { Button } from '../../src/ui/Button';
 import { Card } from '../../src/ui/Card';
 import { RequireAuth } from '../../src/ui/RequireAuth';
+import { NarrationsCard } from '../../src/ui/NarrationsCard';
 import { RecordingsCard } from '../../src/ui/RecordingsCard';
 import { Screen } from '../../src/ui/Screen';
 
@@ -36,7 +38,9 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
   const [voiceOn, setVoiceOn] = useState(true); // from Settings. If Settings cannot load, show the button.
   const [speaking, setSpeaking] = useState(false);
   const [writing, setWriting] = useState(false); // writing the next chapter
-  const [stopRecordingsToken, setStopRecordingsToken] = useState(0); // bump it to stop a playing recording
+  const [failedToken, setFailedToken] = useState(0); // bumps when a recording or audio could not start
+  // One audio player for recordings and cloned-voice audio, so two sounds never play together.
+  const playback = useAudioPlayback(() => setFailedToken((n) => n + 1));
 
   const alive = useRef(true);
   const inFlight = useRef(false);
@@ -88,7 +92,7 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
     if (!story) return;
     const mine = ++speechRun.current;
     setError(null);
-    setStopRecordingsToken((n) => n + 1); // the device voice and a recording must not play together
+    playback.stop(); // the device voice and a recording must not play together
     if (!(await hasVoiceFor(story.language))) {
       if (alive.current && mine === speechRun.current) setError(t('story.noVoice'));
       return;
@@ -202,7 +206,8 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
               onPress={() => (speaking ? stopSpeech() : void startSpeech())}
             />
           )}
-          <RecordingsCard storyId={story.id} onPlayStart={stopSpeech} stopToken={stopRecordingsToken} />
+          <RecordingsCard storyId={story.id} playback={playback} onPlayStart={stopSpeech} failedToken={failedToken} />
+          <NarrationsCard storyId={story.id} storyLanguage={story.language} playback={playback} onPlayStart={stopSpeech} />
           <Button label={t('story.sequel')} variant="accent" onPress={() => void createSequel()} />
         </>
       )}

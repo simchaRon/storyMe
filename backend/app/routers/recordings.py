@@ -1,6 +1,5 @@
 """A person reads a story aloud in the app. The recording is kept and can be played later."""
 
-import threading
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile, status
@@ -15,7 +14,9 @@ from ..models import Story, StoryRecording, User
 from ..schemas import RecordingOut, RecordingUrlOut
 from ..security import AUDIO_TOKEN_MINUTES, check_audio_token, create_audio_token, get_current_user
 from ..services import recording_store
+from ..services.media_usage import media_used_bytes
 from ..textclean import strip_invisible
+from ..userlock import user_lock
 
 router = APIRouter(prefix="/api", tags=["recordings"])
 
@@ -23,16 +24,6 @@ MAX_NAME = 60
 MAX_DURATION_SECONDS = 3600
 # Which consent text the speaker saw (the app shows it on the record screen). Change it when the text changes.
 CONSENT_TEXT_VERSION = "2026-10-v1"
-
-# One upload at a time per user (in this process), so two uploads cannot both pass the limits below.
-_locks: dict[int, threading.Lock] = {}
-_locks_guard = threading.Lock()
-
-
-def _user_lock(user_id: int) -> threading.Lock:
-    with _locks_guard:
-        return _locks.setdefault(user_id, threading.Lock())
-
 
 def _own_story(db: Session, user: User, story_id: int) -> Story:
     story = db.scalar(select(Story).where(Story.id == story_id, Story.user_id == user.id))
@@ -79,15 +70,13 @@ def upload_recording(
         raise HTTPException(422, "The duration is not valid")
 
     max_bytes = settings.max_recording_mb * 1024 * 1024
-    with _user_lock(user.id):
+    with user_lock(user.id):
         # On PostgreSQL this also locks the row across several servers. SQLite does not need it.
         db.execute(select(User.id).where(User.id == user.id).with_for_update())
         count = db.scalar(select(func.count()).select_from(StoryRecording).where(StoryRecording.story_id == story.id))
         if count >= settings.max_recordings_per_story:
             raise HTTPException(status.HTTP_409_CONFLICT, "This story already has the most recordings it can have")
-        used = db.scalar(
-            select(func.coalesce(func.sum(StoryRecording.size_bytes), 0)).where(StoryRecording.user_id == user.id)
-        )
+        used = media_used_bytes(db, user.id)  # recordings, voice samples and cloned-voice audio together
         room = settings.max_user_media_mb * 1024 * 1024 - used
         if room <= 0:
             raise HTTPException(413, "There is no storage left. Delete an old recording.")

@@ -244,7 +244,9 @@ def delete_story(story_id: int, user: User = Depends(get_current_user), db: Sess
         for chapter in rest:
             chapter.root_story_id = new_root.id
     recording_files = [r.file_name for r in story.recordings]  # the rows go with the story. The files must be removed too.
+    narration_files = [n.file_name for n in story.narrations if n.file_name]
     db.delete(story)
     db.commit()
     recording_store.delete_files(user.id, recording_files)
+    recording_store.delete_files(user.id, narration_files, "narrations")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

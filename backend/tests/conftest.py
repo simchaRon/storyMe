@@ -87,7 +87,9 @@ def client(fake_generator):
 
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_story_generator] = lambda: fake_generator
-    yield TestClient(app)
+    test_client = TestClient(app)
+    test_client.session_factory = Session  # tests that need their own database session use this
+    yield test_client
     app.dependency_overrides.clear()
     Base.metadata.drop_all(engine)
 

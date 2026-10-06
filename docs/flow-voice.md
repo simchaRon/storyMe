@@ -13,6 +13,7 @@ A hook for voice cloning in the future. It is not built.
 - Real voice cloning needs a third-party voice service. Claude does not make audio. The plan, privacy rules and open decisions are in [next-session-plan.md](next-session-plan.md).
 - The Hebrew listening test (free services first, the family rates) is in [flow-voice-test.md](flow-voice-test.md).
 - A free way to hear a story in a real voice, with no cloning, is built: [flow-recording.md](flow-recording.md).
+- Voice cloning for English stories is built: [flow-cloning.md](flow-cloning.md). Hebrew cloning is not available. The old `POST /api/voice/clone` placeholder (501) is not used any more.
 
 ## Files
 - `backend/app/routers/voice.py`

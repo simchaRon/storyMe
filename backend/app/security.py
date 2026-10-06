@@ -63,7 +63,7 @@ def get_current_user(
 # A recording link must stay valid while the audio plays (the player asks for pieces of the file),
 # but not much longer: the signature is in the address.
 AUDIO_TOKEN_MINUTES = 5
-_AUDIO_PURPOSE = "recording-audio"
+# A link works for one kind of audio only: a recording link cannot open a narration and the other way round.
 
 
 def _audio_key() -> str:
@@ -72,22 +72,23 @@ def _audio_key() -> str:
     return hmac.new(settings.jwt_secret.encode(), b"dreamtale/recording-audio/v1", hashlib.sha256).hexdigest()
 
 
-def create_audio_token(recording_id: int, user_id: int) -> str:
-    """A short-lived signature for one recording. It lets an audio player fetch the file without an
-    Authorization header (web players cannot send one). It is not an access token: it has no `sub`."""
+def create_audio_token(item_id: int, user_id: int, kind: str = "recording") -> str:
+    """A short-lived signature for one audio file ("recording" or "narration"). It lets an audio player
+    fetch the file without an Authorization header (web players cannot send one). It is not an access
+    token: it has no `sub`."""
     exp = datetime.now(timezone.utc) + timedelta(minutes=AUDIO_TOKEN_MINUTES)
-    payload = {"purpose": _AUDIO_PURPOSE, "rec": recording_id, "uid": user_id, "exp": exp}
+    payload = {"purpose": f"{kind}-audio", "rec": item_id, "uid": user_id, "exp": exp}
     return jwt.encode(payload, _audio_key(), algorithm=ALGORITHM)
 
 
-def check_audio_token(token: str, recording_id: int) -> int:
+def check_audio_token(token: str, item_id: int, kind: str = "recording") -> int:
     """Returns the user id the token was made for, or raises 403."""
     forbidden = HTTPException(status.HTTP_403_FORBIDDEN, "This link is not valid or has expired")
     try:
         payload = jwt.decode(
             token, _audio_key(), algorithms=[ALGORITHM], options={"require": ["exp", "rec", "uid", "purpose"]}
         )
-        if payload["purpose"] != _AUDIO_PURPOSE or payload["rec"] != recording_id:
+        if payload["purpose"] != f"{kind}-audio" or payload["rec"] != item_id:
             raise forbidden
         return int(payload["uid"])
     except (jwt.PyJWTError, ValueError, TypeError):

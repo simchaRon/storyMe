@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { CLONE_CONSENT_VERSION } from '../consent';
 import { getSecret, setSecret } from '../storage';
 import { detailText } from './errors';
 
@@ -70,6 +71,35 @@ export type Recording = {
   created_at: string;
 };
 
+export type Voice = {
+  id: number;
+  name: string;
+  language: Lang;
+  duration_seconds: number;
+  created_at: string;
+};
+
+export type VoiceCapabilities = {
+  enabled: boolean;
+  languages: Lang[];
+  min_sample_seconds: number;
+  max_sample_seconds: number;
+};
+
+export type Narration = {
+  id: number;
+  story_id: number;
+  voice_id: number;
+  voice_name: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  progress_done: number;
+  progress_total: number;
+  duration_seconds: number;
+  error: string | null;
+  created_at: string;
+  finished_at: string | null;
+};
+
 export type GenerateInput = {
   keywords: string[];
   /** The story idea in the user's own words. At least one of keywords or prompt is needed. */
@@ -94,6 +124,30 @@ export async function setToken(value: string | null): Promise<void> {
 /** The auth provider registers a function that runs when the server says the token is no good. */
 export function setUnauthorizedHandler(fn: (() => void) | null) {
   onUnauthorized = fn;
+}
+
+/** The form for an audio upload (a recording or a voice sample). */
+async function audioForm(input: {
+  uri: string;
+  name: string;
+  durationSeconds: number;
+  consent: boolean;
+  /** Which consent text the speaker saw (voice samples only). */
+  consentTextVersion?: string;
+}) {
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(input.uri)).blob();
+    form.append('file', blob, 'recording.webm');
+  } else {
+    // React Native reads the file from the phone when the form is sent.
+    form.append('file', { uri: input.uri, name: 'recording.m4a', type: 'audio/mp4' } as unknown as Blob);
+  }
+  form.append('name', input.name);
+  form.append('duration_seconds', String(input.durationSeconds));
+  form.append('consent', input.consent ? 'true' : 'false');
+  if (input.consentTextVersion) form.append('consent_text_version', input.consentTextVersion);
+  return form;
 }
 
 async function request<T>(
@@ -188,24 +242,36 @@ export const api = {
   uploadRecording: async (
     storyId: number,
     input: { uri: string; name: string; durationSeconds: number; consent: boolean },
-  ) => {
-    const form = new FormData();
-    if (Platform.OS === 'web') {
-      const blob = await (await fetch(input.uri)).blob();
-      form.append('file', blob, 'recording.webm');
-    } else {
-      // React Native reads the file from the phone when the form is sent.
-      form.append('file', { uri: input.uri, name: 'recording.m4a', type: 'audio/mp4' } as unknown as Blob);
-    }
-    form.append('name', input.name);
-    form.append('duration_seconds', String(input.durationSeconds));
-    form.append('consent', input.consent ? 'true' : 'false');
-    return request<Recording>(`/api/stories/${storyId}/recordings`, { method: 'POST', body: form, timeoutMs: 120000 });
-  },
+  ) =>
+    request<Recording>(`/api/stories/${storyId}/recordings`, {
+      method: 'POST',
+      body: await audioForm(input),
+      timeoutMs: 120000,
+    }),
   /** A short-lived address a player can use without a login header. */
   recordingUrl: async (recordingId: number) => {
     const data = await request<{ url: string; expires_in: number }>(`/api/recordings/${recordingId}/url`);
     return `${API_URL}${data.url}`;
   },
   deleteRecording: (recordingId: number) => request<void>(`/api/recordings/${recordingId}`, { method: 'DELETE' }),
+
+  // Voice cloning (English)
+  voiceCapabilities: (signal?: AbortSignal) => request<VoiceCapabilities>('/api/voices/capabilities', { signal }),
+  listVoices: (signal?: AbortSignal) => request<Voice[]>('/api/voices', { signal }),
+  createVoice: async (input: { uri: string; name: string; durationSeconds: number; consent: boolean }) =>
+    request<Voice>('/api/voices', {
+      method: 'POST',
+      body: await audioForm({ ...input, consentTextVersion: CLONE_CONSENT_VERSION }),
+      timeoutMs: 120000,
+    }),
+  deleteVoice: (voiceId: number) => request<void>(`/api/voices/${voiceId}`, { method: 'DELETE' }),
+  createNarration: (storyId: number, voiceId: number) =>
+    request<Narration>(`/api/stories/${storyId}/narrations`, { method: 'POST', body: { voice_id: voiceId } }),
+  listNarrations: (storyId: number, signal?: AbortSignal) =>
+    request<Narration[]>(`/api/stories/${storyId}/narrations`, { signal }),
+  narrationUrl: async (narrationId: number) => {
+    const data = await request<{ url: string; expires_in: number }>(`/api/narrations/${narrationId}/url`);
+    return `${API_URL}${data.url}`;
+  },
+  deleteNarration: (narrationId: number) => request<void>(`/api/narrations/${narrationId}`, { method: 'DELETE' }),
 };

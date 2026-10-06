@@ -1,4 +1,3 @@
-import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,36 +7,29 @@ import { api, Recording } from '../api/client';
 import { errorMessage } from '../api/errorMessage';
 import { formatDuration } from '../audioFormat';
 import { colors, fonts, spacing, touch } from '../theme';
+import { Playback } from '../useAudioPlayback';
 import { Button } from './Button';
 import { Card } from './Card';
 import { confirm } from './confirm';
 
-const START_TIMEOUT_MS = 15000; // if a recording has not started playing by then, give up
-
 type Props = {
   storyId: number;
+  /** The one audio player of the story screen. */
+  playback: Playback;
   /** Called when a recording is about to play, so the device voice can be stopped. */
   onPlayStart: () => void;
-  /** When this number changes, any recording that is playing stops (the device voice started). */
-  stopToken: number;
+  /** Shown when the player could not start. Changes each time it happens. */
+  failedToken: number;
 };
 
 /** The recordings of one story (people reading it aloud), with play, delete and "record your voice". */
-export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
+export function RecordingsCard({ storyId, playback, onPlayStart, failedToken }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [playingId, setPlayingId] = useState<number | null>(null);
-  const [source, setSource] = useState<{ uri: string } | null>(null);
-  const [wantPlay, setWantPlay] = useState(false);
   const alive = useRef(true);
   const loading = useRef(false); // blocks a second tap while the address is being fetched
-
-  const player = useAudioPlayer(source);
-  const status = useAudioPlayerStatus(player);
-  const statusRef = useRef(status);
-  statusRef.current = status;
 
   useEffect(() => {
     alive.current = true;
@@ -46,15 +38,9 @@ export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
     };
   }, []);
 
-  const stopPlayback = useCallback(() => {
-    try {
-      player.pause();
-    } catch {
-      /* not playing */
-    }
-    setWantPlay(false);
-    setPlayingId(null);
-  }, [player]);
+  useEffect(() => {
+    if (failedToken > 0) setError(t('story.playFailed'));
+  }, [failedToken, t]);
 
   // Load the list when the screen opens and when the user comes back from the record screen.
   // When the screen loses focus (for example the record screen opens), playback stops, so the
@@ -68,65 +54,23 @@ export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
         .catch(() => {}); // the list is a bonus. The story still works without it
       return () => {
         current = false;
-        stopPlayback();
+        playback.stop();
       };
-    }, [storyId, stopPlayback]),
-  );
-
-  // Start playing as soon as the new player exists.
-  useEffect(() => {
-    if (source && wantPlay) {
-      player.play();
-      setWantPlay(false);
-    }
-  }, [source, wantPlay, player]);
-
-  useEffect(() => {
-    if (status.didJustFinish) setPlayingId(null);
-  }, [status.didJustFinish]);
-
-  // If a recording never starts (the link expired, the file is gone, no network), do not stay on "Stop".
-  useEffect(() => {
-    if (playingId === null) return;
-    const timer = setTimeout(() => {
-      if (!statusRef.current.playing && !statusRef.current.isLoaded) {
-        stopPlayback();
-        if (alive.current) setError(t('story.playFailed'));
-      }
-    }, START_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [playingId, stopPlayback, t]);
-
-  useEffect(() => {
-    stopPlayback();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stopToken]);
-
-  useEffect(
-    () => () => {
-      try {
-        player.pause();
-      } catch {
-        /* already gone */
-      }
-    },
-    [player],
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [storyId]),
   );
 
   async function toggle(rec: Recording) {
+    const key = `rec:${rec.id}`;
     if (loading.current) return;
-    if (playingId === rec.id) return stopPlayback();
+    if (playback.playingKey === key) return playback.stop();
     loading.current = true;
     setError(null);
     try {
       const uri = await api.recordingUrl(rec.id); // the address expires, so ask each time
       if (!alive.current) return;
       onPlayStart(); // only now: if the address could not be fetched, the device voice keeps going
-      stopPlayback();
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-      setSource({ uri });
-      setPlayingId(rec.id);
-      setWantPlay(true);
+      await playback.play(key, uri);
     } catch (e) {
       if (alive.current) setError(errorMessage(t, e, { 404: 'story.playFailed' }));
     } finally {
@@ -143,7 +87,7 @@ export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
     );
     if (!ok) return;
     try {
-      if (playingId === rec.id) stopPlayback();
+      if (playback.playingKey === `rec:${rec.id}`) playback.stop();
       await api.deleteRecording(rec.id);
       if (alive.current) setRecordings((old) => old.filter((r) => r.id !== rec.id));
     } catch (e) {
@@ -152,7 +96,7 @@ export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
   }
 
   function openRecordScreen() {
-    stopPlayback(); // do not play while the microphone is about to start
+    playback.stop(); // do not play while the microphone is about to start
     router.push({ pathname: '/record/[id]', params: { id: String(storyId) } });
   }
 
@@ -165,7 +109,7 @@ export function RecordingsCard({ storyId, onPlayStart, stopToken }: Props) {
       {recordings.length === 0 && <Text style={styles.note}>{t('story.voicesEmpty')}</Text>}
 
       {recordings.map((rec) => {
-        const playing = playingId === rec.id;
+        const playing = playback.playingKey === `rec:${rec.id}`;
         return (
           <View key={rec.id} style={styles.row}>
             <View style={styles.rowText}>

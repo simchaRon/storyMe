@@ -16,26 +16,31 @@ backend/
     routers/           auth, settings, stories, voice
     services/
       story_generator.py   Talks to Claude
-      recording_store.py   Voice recording files on disk
+      recording_store.py   Audio files on disk (recordings, voice samples, cloned-voice audio)
+      narrator.py          Makes a story into audio with a cloned voice (background job, safety checks)
+      media_usage.py       How much audio a user keeps
   tests/               pytest. Claude is faked.
   requirements.txt
   .env.example
 docs/                  These docs
 tools/voice-test/      Blind rating page for the Hebrew voice test (plain HTML and JS, no install)
+tools/tts-worker/      Voice worker: Chatterbox in its own Python 3.11 environment, a small web server (see its README)
 ```
 
 ```
 mobile/                Expo app (iOS, Android, Web)
-  app/                 Screens (expo-router): _layout, index (home), auth, settings, create, story/[id], record/[id], library
+  app/                 Screens (expo-router): _layout, index (home), auth, settings, create, story/[id], record/[id], library, voices, voice/new
   src/
     api/               client.ts (calls, token), errors.ts and errorMessage.ts (error texts)
     auth/              AuthProvider and useAuth()
     i18n/              English and Hebrew text, RTL switch, restart
-    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard, RecordingsCard
+    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard, RecordingsCard, NarrationsCard
     keywords.ts        Keyword rules (same as the backend)
     storyOptions.ts    Age and length choices and defaults (6, 3 minutes)
     library.ts         Groups chapters into series
     speech.ts, speechText.ts   Reading aloud (voice check, short pieces)
+    useSpeechRecorder.ts, useAudioPlayback.ts   One microphone hook and one shared audio player
+    narration.ts, voiceSample.ts, consent.ts    Helpers for cloned-voice audio
     theme.ts           Colors, sizes, glow
     storage.ts         Safe storage helpers
   tests/               Translation tests, error mapping test

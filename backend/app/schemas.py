@@ -147,3 +147,41 @@ class RecordingOut(BaseModel):
 class RecordingUrlOut(BaseModel):
     url: str  # path with a short-lived signature. Add the server address in front of it.
     expires_in: int  # seconds
+
+
+# ---- Voice cloning ----
+class VoiceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    language: Lang
+    duration_seconds: float
+    created_at: datetime
+
+
+class VoiceCapabilities(BaseModel):
+    enabled: bool  # false when no voice worker is set up
+    languages: list[Lang]  # languages a cloned voice can read
+    min_sample_seconds: int
+    max_sample_seconds: int
+
+
+class NarrationCreate(BaseModel):
+    voice_id: int
+
+
+class NarrationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    story_id: int
+    voice_id: int
+    voice_name: str
+    status: Literal["queued", "running", "done", "failed"]
+    progress_done: int
+    progress_total: int
+    duration_seconds: float
+    error: Optional[str]
+    created_at: datetime
+    finished_at: Optional[datetime]
