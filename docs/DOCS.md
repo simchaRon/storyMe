@@ -1,0 +1,25 @@
+# storyMe docs
+
+- [Roadmap](roadmap.md): what is done and what is next.
+- [Architecture](architecture.md): folders and files.
+- [API list](api.md): every endpoint.
+- Backend flows:
+  - [Auth](flow-auth.md): sign up, login, delete account.
+  - [Settings](flow-settings.md): user settings.
+  - [Story generation](flow-story-generation.md): make a story, quota, limits.
+  - [Sequel](flow-sequel.md): make the next chapter.
+  - [Stories](flow-stories.md): list, read, favorite, delete.
+  - [Story prompt](flow-story-prompt.md): the Claude prompt and its errors.
+  - [Voice](flow-voice.md): placeholder.
+- App flows:
+  - [Mobile app](flow-mobile-app.md): startup, API client, login token, error messages.
+  - [Login and register screens](flow-auth-screens.md): sign up and log in.
+  - [Settings screen](flow-settings-screen.md): language, level, voice, profile.
+  - [Create a story screen](flow-create-story-screen.md): ideas, level, Torah mode, loading.
+  - [Story viewer](flow-story-viewer.md): read, listen, next chapter.
+  - [Library screen](flow-library-screen.md): favorites, past stories, series.
+  - [Languages and RTL](flow-i18n-rtl.md): English, Hebrew, layout direction.
+  - [Design system](flow-design-system.md): colors, sizes, components.
+- [Next session plan](next-session-plan.md): handoff. Where we are, rules, next steps, voice cloning plan.
+- Process:
+  - [Code review](flow-code-review.md): the reviewer agent we run after each phase.
