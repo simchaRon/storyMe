@@ -11,6 +11,7 @@
   - [Stories](flow-stories.md): list, read, favorite, delete.
   - [Story prompt](flow-story-prompt.md): the Claude prompt and its errors.
   - [Voice](flow-voice.md): placeholder.
+  - [Hebrew voice test](flow-voice-test.md): free test with the family, rating page.
 - App flows:
   - [Mobile app](flow-mobile-app.md): startup, API client, login token, error messages.
   - [Login and register screens](flow-auth-screens.md): sign up and log in.

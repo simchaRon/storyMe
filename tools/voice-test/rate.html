@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בדיקת קולות - דירוג</title>
+<style>
+  :root { color-scheme: dark; --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#f1f5f9; --muted:#94a3b8; --indigo:#6366f1; --amber:#fbbf24; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; background:var(--bg); color:var(--text); font:18px/1.5 system-ui, "Segoe UI", Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; display:grid; gap:16px; }
+  h1 { margin:8px 0 0; font-size:28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; display:grid; gap:12px; }
+  .muted { color:var(--muted); font-size:15px; }
+  label { display:grid; gap:4px; }
+  input[type=text], select { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:18px; min-height:44px; }
+  button { background:var(--indigo); color:#fff; border:0; border-radius:12px; padding:10px 16px; font-size:18px; min-height:44px; cursor:pointer; }
+  button.secondary { background:transparent; border:1px solid var(--line); }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
+  audio { width:100%; }
+  .title { color:var(--amber); font-weight:700; }
+  .reveal { color:var(--muted); font-size:15px; direction:ltr; text-align:left; }
+  table { width:100%; border-collapse:collapse; font-size:16px; }
+  th, td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:center; }
+  th:first-child, td:first-child { text-align:right; direction:ltr; }
+  .pass { color:#4ade80; font-weight:700; }
+  .fail { color:#f87171; }
+  :focus-visible { outline:3px solid var(--amber); outline-offset:2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>בדיקת קולות - דירוג</h1>
+
+  <section class="card">
+    <p>מקשיבים לכל קטע ונותנים ציון מ-1 (גרוע) עד 5 (מצוין). <strong>לא רואים איזה שירות יצר את הקטע</strong>, כדי שהדירוג יהיה הוגן.</p>
+    <p class="muted">הכול נשאר במחשב הזה. שום קובץ ושום ציון לא נשלחים לאינטרנט.</p>
+    <label>השם שלך
+      <input id="rater" type="text" autocomplete="off" placeholder="למשל: אמא">
+    </label>
+    <label>בחרו את קובצי השמע (אפשר לבחור הרבה יחד)
+      <input id="files" type="file" accept="audio/*" multiple>
+    </label>
+    <p class="muted">שם קובץ בנוי כך: <bdi dir="ltr">candidate__voice__passage.mp3</bdi>, למשל <bdi dir="ltr">elevenlabs__dad__p2.mp3</bdi>. לקול רגיל (לא משובט) כותבים <bdi dir="ltr">stock</bdi> במקום שם האדם.</p>
+  </section>
+
+  <section id="clips" aria-live="polite"></section>
+
+  <section class="card">
+    <div class="row">
+      <button id="export" type="button">שמירת הציונים (CSV)</button>
+      <button id="summary" type="button" class="secondary">הצגת סיכום</button>
+      <button id="reveal" type="button" class="secondary">חשיפת שמות השירותים</button>
+    </div>
+    <div id="summaryOut"></div>
+  </section>
+</main>
+
+<script src="logic.js"></script>
+<script>
+(function () {
+  var V = window.VoiceTest;
+  var STORE = 'voiceTestRatings.v1';
+  var FIELDS = [
+    { key: 'clear', text: 'המילים ברורות' },
+    { key: 'pron', text: 'ההגייה וההטעמה נכונות' },
+    { key: 'rhythm', text: 'קצב טבעי ונעים להקשבה' },
+    { key: 'sim', text: 'נשמע כמו האדם האמיתי', cloneOnly: true }
+  ];
+  var clips = [];
+  var revealed = false;
+
+  function loadSaved() {
+    try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; }
+  }
+  function save() {
+    try {
+      var all = loadSaved();
+      clips.forEach(function (c) { all[c.key] = { ratings: c.ratings, wrong: c.wrong }; });
+      localStorage.setItem(STORE, JSON.stringify(all));
+    } catch (e) { /* storage may be blocked. The page still works. */ }
+  }
+
+  function addText(parent, tag, text, cls) {
+    var el = document.createElement(tag);
+    el.textContent = text;
+    if (cls) el.className = cls;
+    parent.appendChild(el);
+    return el;
+  }
+
+  function render() {
+    var host = document.getElementById('clips');
+    host.textContent = '';
+    clips.forEach(function (clip) {
+      var card = document.createElement('article');
+      card.className = 'card';
+      addText(card, 'div', clip.label, 'title');
+
+      var audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'none';
+      audio.src = clip.url;
+      card.appendChild(audio);
+
+      var grid = document.createElement('div');
+      grid.className = 'grid';
+      FIELDS.forEach(function (f) {
+        if (f.cloneOnly && !V.isClone(clip.info.voice)) return;
+        var lab = document.createElement('label');
+        addText(lab, 'span', f.text);
+        var sel = document.createElement('select');
+        ['', 1, 2, 3, 4, 5].forEach(function (n) {
+          var o = document.createElement('option');
+          o.value = n;
+          o.textContent = n === '' ? '-' : n;
+          if (String(clip.ratings[f.key]) === String(n)) o.selected = true;
+          sel.appendChild(o);
+        });
+        sel.addEventListener('change', function () { clip.ratings[f.key] = sel.value === '' ? '' : Number(sel.value); save(); });
+        lab.appendChild(sel);
+        grid.appendChild(lab);
+      });
+      card.appendChild(grid);
+
+      var wrongLabel = document.createElement('label');
+      addText(wrongLabel, 'span', 'מילים שנשמעו לא נכון (אם יש)');
+      var wrong = document.createElement('input');
+      wrong.type = 'text';
+      wrong.value = clip.wrong || '';
+      wrong.addEventListener('input', function () { clip.wrong = wrong.value; save(); });
+      wrongLabel.appendChild(wrong);
+      card.appendChild(wrongLabel);
+
+      if (revealed) addText(card, 'div', clip.info.candidate + ' / ' + clip.info.voice + ' / ' + clip.info.passage, 'reveal');
+      host.appendChild(card);
+    });
+  }
+
+  function rows() {
+    var rater = document.getElementById('rater').value.trim();
+    return clips.map(function (c) {
+      return { rater: rater, clip: c.label, candidate: c.info.candidate, voice: c.info.voice, passage: c.info.passage,
+               clear: c.ratings.clear, pron: c.ratings.pron, rhythm: c.ratings.rhythm, sim: c.ratings.sim, wrong: c.wrong };
+    });
+  }
+
+  document.getElementById('files').addEventListener('change', function (e) {
+    clips.forEach(function (c) { URL.revokeObjectURL(c.url); });
+    var saved = loadSaved();
+    var files = Array.prototype.slice.call(e.target.files);
+    clips = V.shuffle(files, Math.random).map(function (file, i) {
+      var key = file.name + '|' + file.size;
+      var old = saved[key] || {};
+      return { key: key, label: 'קטע ' + (i + 1), url: URL.createObjectURL(file), info: V.parseClipName(file.name),
+               ratings: old.ratings || { clear: '', pron: '', rhythm: '', sim: '' }, wrong: old.wrong || '' };
+    });
+    revealed = false;
+    document.getElementById('reveal').textContent = 'חשיפת שמות השירותים';
+    document.getElementById('summaryOut').textContent = '';
+    render();
+  });
+
+  document.getElementById('reveal').addEventListener('click', function () {
+    revealed = !revealed;
+    this.textContent = revealed ? 'הסתרת שמות השירותים' : 'חשיפת שמות השירותים';
+    render();
+  });
+
+  document.getElementById('export').addEventListener('click', function () {
+    if (!clips.length) { alert('קודם בוחרים קובצי שמע.'); return; }
+    if (!document.getElementById('rater').value.trim()) { alert('כתבו את השם שלכם למעלה.'); return; }
+    var blob = new Blob([V.toCsv(rows())], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'voice-ratings-' + document.getElementById('rater').value.trim().replace(/[^\w֐-׿-]+/g, '_') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  document.getElementById('summary').addEventListener('click', function () {
+    var out = document.getElementById('summaryOut');
+    out.textContent = '';
+    var data = V.summarize(rows());
+    if (!data.length) { out.textContent = 'אין עדיין ציונים.'; return; }
+    var table = document.createElement('table');
+    var head = table.createTHead().insertRow();
+    ['שירות / סוג', 'קטעים', 'ברור', 'הגייה', 'קצב', 'דמיון', 'עבר?'].forEach(function (t) {
+      var th = document.createElement('th'); th.textContent = t; head.appendChild(th);
+    });
+    var body = table.createTBody();
+    data.forEach(function (d) {
+      var tr = body.insertRow();
+      [d.name, d.clips, d.clear, d.pron, d.rhythm, d.sim].forEach(function (v) { tr.insertCell().textContent = v === null ? '-' : v; });
+      var cell = tr.insertCell();
+      cell.textContent = d.pass ? 'כן' : 'עדיין לא';
+      cell.className = d.pass ? 'pass' : 'fail';
+    });
+    out.appendChild(table);
+    addText(out, 'p', 'עבר = ברור, הגייה וקצב מקבלים ממוצע של 4 ומעלה. הסיכום הוא רק של מה שדירגתם אתם.', 'muted');
+  });
+})();
+</script>
+</body>
+</html>

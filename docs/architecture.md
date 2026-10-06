@@ -18,6 +18,7 @@ backend/
   requirements.txt
   .env.example
 docs/                  These docs
+tools/voice-test/      Blind rating page for the Hebrew voice test (plain HTML and JS, no install)
 ```
 
 ```

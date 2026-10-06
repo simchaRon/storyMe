@@ -116,3 +116,9 @@ Decisions from the owner: there is no provider yet. The user records the voice i
 - Suggested limit of voices per account (5?) and of audio minutes per day.
 - Who can judge the Hebrew test (2 or more native speakers)?
 - Privacy policy and the age rules for the app stores.
+
+### Update 2026-10-06: free first, the family judges
+- The owner decided to start voice work with free services only. The family (native Hebrew speakers) will judge. Guide and rating page: [flow-voice-test.md](flow-voice-test.md), `tools/voice-test/`.
+- This computer has no GPU (Intel UHD 620, 32 GB RAM, no ffmpeg). Open-source cloning models such as QwenTTS-he (Apache-2.0, needs Hebrew text turned into IPA first) need a GPU. A free Google Colab GPU is the likely way to try them. Not set up. Do not write code for that model from memory: read its page first.
+- A free alternative that needs no cloning and no provider: **"Read it yourself"**. A parent records their reading of a story in the app (expo-audio or expo-av, check the SDK 57 docs), the app keeps the file with the story, and the child plays it in the story viewer. The real voice, perfect Hebrew, free. This fits the tagline "Magical bedtime stories in your voice". Decide this after the family test, or earlier if the owner wants it.
+- Free tiers of voice services usually forbid commercial use. A test is fine. A product needs a licence that allows it.

@@ -18,8 +18,7 @@
 - Check the app by eye, on web and on a phone: RTL, colors, Hebrew text, the logo, the slider, typing Hebrew in the idea box, reading aloud in Hebrew, the library. Check that "Restart now" works in a real build (`expo-updates` may need EAS set up).
 - Before a store build: set `ios.bundleIdentifier` and `android.package` in `mobile/app.json`.
 - Alembic migrations before the first Postgres deploy. Also test on Postgres (tests run on SQLite only).
-- First git commit (nothing is committed yet).
-- Phase 6: voice cloning. Step 1 is a Hebrew listening test to pick a provider (none chosen yet). Several voices per account, recorded live in the app with spoken consent. Plan: [next-session-plan.md](next-session-plan.md).
+- Phase 6: voice cloning. Started with free services only. The family runs the Hebrew listening test ([flow-voice-test.md](flow-voice-test.md)) with the rating page in `tools/voice-test/`. If no free service passes, build "Read it yourself" (a parent records their own reading in the app) instead. Plan: [next-session-plan.md](next-session-plan.md).
 
 ## Known limits (from the reviews, not fixed yet)
 - There is no second safety check of the story text before it is saved. Safety relies on the prompt (tested on a few cases only).
