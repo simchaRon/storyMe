@@ -2,6 +2,7 @@
 
 - [Roadmap](roadmap.md): what is done and what is next.
 - [Architecture](architecture.md): folders and files.
+- [How it works, for a 15 year old](explain-for-teens.md): the whole project explained with simple words and pictures.
 - [API list](api.md): every endpoint.
 - Backend flows:
   - [Auth](flow-auth.md): sign up, login, delete account.

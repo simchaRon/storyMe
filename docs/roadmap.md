@@ -16,6 +16,14 @@
 - Phase 6, voice cloning for English stories (free, Chatterbox on this computer): voice samples with consent, a voice worker, background audio jobs with progress, safety checks, limits, cleanup, and the app screens. Reviewed with the `code-reviewer` and the findings were fixed. Tested end to end with the real model on 2026-10-07: a 1966-character story became 134 s of audio in 521 s, and the owner said it sounds good. See [flow-cloning.md](flow-cloning.md).
 - Tests now: app 61, backend 225, voice worker 18. The app type checks and builds for web.
 
+- Hebrew stories are written with full nikud (vowel points), so children can read them and the free device voice reads them more exactly. Tested with real Claude. See [flow-story-prompt.md](flow-story-prompt.md).
+
+- A one-tap English / עברית button is in the top bar of every screen (`LanguageButton`). Not checked by eye on a phone yet.
+
+- Every story (English and Hebrew) has an "Automatic reader" row (the device voice) beside the people's recordings, and the user can record their own reading with no cloning. Not checked by eye on a phone yet.
+
+- The create screen has a "Story language" choice (English or עברית), separate from the app language. Not checked by eye yet.
+
 ## Next
 - Check the app by eye, on web and on a phone: RTL, colors, Hebrew text, the logo, the slider, typing Hebrew in the idea box, reading aloud in Hebrew, the library. Check that "Restart now" works in a real build (`expo-updates` may need EAS set up).
 - Before a store build: set `ios.bundleIdentifier` and `android.package` in `mobile/app.json`.
@@ -28,6 +36,8 @@
   - Safety follow-ups: check the spoken consent and the speaker, and encrypt files at rest.
 
 ## Known limits (from the reviews, not fixed yet)
+- The automatic reader (device voice) may ignore Hebrew nikud, because that is up to the phone's voice. Pauses at punctuation are done by the app. A server Hebrew voice would be needed for exact reading.
+- Hebrew nikud is written by Claude, so a vowel can be wrong now and then. Check how the device voice reads nikud on a real phone (Hebrew voice quality depends on the phone). A nikud tool such as Phonikud could fix mistakes later. Hebrew stories made before this change have no nikud.
 - There is no second safety check of the story text before it is saved. Safety relies on the prompt (tested on a few cases only).
 - Many long stories at the same moment can use up the server threads. A limit of running stories per user, or streaming, would help.
 - The IP rate limit is in memory, per process. Behind a proxy all users share one IP. Use Redis and the user id as the key before going public.

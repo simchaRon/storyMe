@@ -15,9 +15,9 @@ WORDS_PER_MINUTE = 120  # a calm bedtime telling pace
 
 
 # Measured on 2026-10-06: when asked for N words in Hebrew, Claude wrote about 0.63 x N (English: about 1.0 x N).
-# So for Hebrew we ask for 1.5 x more. Then a Hebrew story has about as many words as the English one
+# So for Hebrew we ask for 1.5 x more (2.0 x since stories have nikud, which makes Claude write fewer words). Then a Hebrew story has about as many words as the English one
 # (339 words for 3 minutes, 569 for 5 minutes). We did not time real Hebrew speech.
-HEBREW_WORDS_FACTOR = 1.5
+HEBREW_WORDS_FACTOR = 2.0
 
 
 def target_words(minutes: int, language: str = "en") -> int:
@@ -26,13 +26,15 @@ def target_words(minutes: int, language: str = "en") -> int:
 
 
 def max_tokens_for(minutes: int, language: str = "en") -> int:
-    """Room for the story. Hebrew needs more tokens per word, so be generous."""
-    return min(12000, max(4000, target_words(minutes, language) * 6))
+    """Room for the story. Hebrew needs more tokens per word (and much more with nikud), so be generous."""
+    per_word = 14 if language == "he" else 6
+    return min(24000 if language == "he" else 12000, max(4000, target_words(minutes, language) * per_word))
 
 
-def timeout_for(minutes: int) -> float:
-    """Seconds to wait for Claude. A longer story takes longer to write."""
-    return 35.0 + minutes * 8.0
+def timeout_for(minutes: int, language: str = "en") -> float:
+    """Seconds to wait for Claude. A longer story takes longer to write. Hebrew with nikud takes about twice as long."""
+    seconds = 35.0 + minutes * 8.0
+    return seconds * 2 if language == "he" else seconds
 
 
 PREVIOUS_CHARS = 2500  # how much of the last chapter a sequel sees
@@ -95,7 +97,10 @@ Rules:
 - The request may be in any language. Always write the story in {language}.
 - Never write a message addressed to a real person, a request for money or help, a phone number, an address, a link or a password. The characters talk to each other. The story never speaks to the listener's real family.
 - Reply only with the JSON object. Use an empty string for fields that do not apply.
+{nikud_rule}
 {torah_rules}"""
+
+NIKUD_RULE = """- Write the title and the whole story WITH FULL NIKUD (Hebrew vowel points), like a printed children's book, so a child can read it and a text-to-speech voice can say every word correctly. Put the vowel on every letter that needs one, a dagesh where it belongs, and the shin dot or sin dot on every shin. Use the common full spelling (ktiv male) together with the nikud. Keep the nikud correct and consistent: if you are not sure of a word's vowels, choose a simpler word you know well. Do not add nikud to English words or digits."""
 
 TORAH_RULES = """- This is a Torah / Bible story. Stay faithful to the source text. Do not invent events, people or sayings that change the story. Tell it gently and in a way that is right for children.
 - Put the source in "source_reference" (book, chapter and verses), for example "Genesis 6-9".
@@ -140,6 +145,7 @@ def build_system_prompt(
         age_rule=age_guidance(child_age),
         words=target_words(length_minutes, language),
         minutes=length_minutes,
+        nikud_rule=NIKUD_RULE if language == "he" else "",
         torah_rules=TORAH_RULES if is_torah else "",
     )
 
@@ -189,7 +195,7 @@ class StoryGenerator:
             response = self._client.messages.create(
                 model=settings.claude_model,
                 max_tokens=max_tokens_for(length_minutes, language),
-                timeout=timeout_for(length_minutes),
+                timeout=timeout_for(length_minutes, language),
                 system=build_system_prompt(level, language, is_torah, child_age, length_minutes),
                 messages=[{"role": "user", "content": build_user_prompt(keywords, previous, prompt)}],
                 output_config={

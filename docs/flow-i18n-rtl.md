@@ -22,11 +22,15 @@ The app speaks English (left-to-right) and Hebrew (right-to-left). The layout fl
 - Not verified yet: `restartApp()` in a real production build (`expo-updates` may need EAS set up), and that react-native-web flips `flexDirection: 'row'` from the page `dir`. Check both by hand.
 - The test `tests/i18n-usage.test.mjs` checks that every key used in the code exists in both languages.
 
+## Language button on every screen
+The top bar (`Header`) has a button with the name of the other language (`עברית` in English, `English` in Hebrew). One tap switches the language and the text direction, in the same way as `LanguageSwitch`. If the user is signed in, the choice is also saved (`preferred_language`). On a phone a short note with a "Restart now" button shows under the bar. The sign-in screen keeps its full `LanguageSwitch`. The loading screens of story writing have no bar.
+
 ## Files
 - `mobile/src/i18n/index.ts` (`initLanguage`, `setLanguage`)
 - `mobile/src/i18n/direction.ts` (`applyDirection`, language list)
 - `mobile/src/i18n/en.json`, `mobile/src/i18n/he.json`
 - `mobile/src/ui/LanguageSwitch.tsx`
+- `mobile/src/ui/LanguageButton.tsx` and `Header.tsx`
 - `mobile/tests/i18n-keys.test.mjs`
 
 ## Test

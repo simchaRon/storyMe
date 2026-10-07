@@ -27,3 +27,23 @@ test('Hebrew text is cut too, and empty text gives nothing', () => {
   assert.ok(parts.length > 1);
   assert.deepEqual(splitLong('   '), []);
 });
+
+test('speechPlan: one piece per sentence, with the pause after each', async () => {
+  const { speechPlan } = await import('../src/speechText.ts');
+  const plan = speechPlan('כותרת', 'שָׁלוֹם, עוֹלָם. מַה שְׁלוֹמְךָ? טוֹב!\n\nפסקה שנייה.');
+  assert.deepEqual(
+    plan.map((p) => p.text),
+    ['כותרת', 'שָׁלוֹם, עוֹלָם.', 'מַה שְׁלוֹמְךָ?', 'טוֹב!', 'פסקה שנייה.'],
+  );
+  assert.ok(plan[0].pauseAfterMs > plan[1].pauseAfterMs); // title pause is the longest
+  assert.ok(plan[2].pauseAfterMs < plan[1].pauseAfterMs); // ? is shorter than .
+  assert.ok(plan[3].pauseAfterMs > plan[1].pauseAfterMs); // end of paragraph is longer
+  assert.ok(plan[4].pauseAfterMs > plan[1].pauseAfterMs);
+});
+
+test('speechPlan: nikud is kept, quotes stay with their sentence, empty text gives nothing', async () => {
+  const { speechPlan } = await import('../src/speechText.ts');
+  const plan = speechPlan('', '"וַאי!" אָמַר נִמְרוֹד.');
+  assert.deepEqual(plan.map((p) => p.text), ['"וַאי!"', 'אָמַר נִמְרוֹד.']);
+  assert.deepEqual(speechPlan('  ', ' \n\n '), []);
+});

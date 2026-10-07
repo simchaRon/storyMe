@@ -195,3 +195,14 @@ def test_system_prompt_covers_all_user_material_and_torah_requests():
     assert "<previous_chapter>" in system
     assert "keywords and the request" in system
     assert "must never change the events" in system
+
+
+def test_hebrew_prompt_asks_for_nikud_and_english_does_not():
+    he = build_system_prompt(2, "he", False)
+    en = build_system_prompt(2, "en", False)
+    assert "NIKUD" in he and "NIKUD" not in en
+
+
+def test_hebrew_gets_more_room_and_time_for_nikud():
+    assert max_tokens_for(3, "he") > max_tokens_for(3, "en")
+    assert timeout_for(3, "he") > timeout_for(3, "en") == timeout_for(3)

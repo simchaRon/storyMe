@@ -12,6 +12,7 @@ A person reads a story aloud in the app. The recording is saved with the story. 
 6. Tap **Play** on a voice. The app asks the server for a short-lived link (`GET /api/recordings/{id}/url`) and plays it. Tap **Stop** to stop. **Delete** removes the recording (it asks first).
 
 ## Rules
+- On every story the card also has an "Automatic reader" row (the free device voice) above the recordings. See [flow-story-viewer.md](flow-story-viewer.md).
 - A story can have up to 5 recordings (`MAX_RECORDINGS_PER_STORY` in the code). One recording is up to 25 MB (about 20 minutes). One user can keep up to 300 MB in total.
 - **Consent:** the server refuses a recording unless consent is sent. It stores the time and the version of the consent text (`2026-10-v1`). Change the version when the text on the record screen changes.
 - **Only the owner:** every call checks that the story or recording belongs to the logged-in user. Others get 404.

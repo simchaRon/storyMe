@@ -18,6 +18,7 @@
   "language": {
     "restartNeeded": "Restart the app to finish changing the text direction.",
     "restartManually": "Close and open the app again to finish changing the text direction.",
+    "switchLabel": "Change language to {{name}}",
     "restartNow": "Restart now"
   },
   "auth": {
@@ -79,6 +80,8 @@
     "dailyLimit": "You reached today's story limit. Try again tomorrow.",
     "cancel": "Stop waiting",
     "cancelNote": "If you stop, the story may still be saved. Check your library.",
+    "storyLanguage": "Story language",
+    "storyLanguageHint": "The app text stays as it is. A Hebrew story is written with nikud (vowel points).",
     "childAge": "Child's age",
     "childAgeHint": "The words and the story are fitted to this age.",
     "length": "Story length",
@@ -91,7 +94,9 @@
   "story": {
     "chapter": "Chapter {{n}}",
     "source": "Source: {{ref}}",
-    "listen": "Read aloud",
+    "autoReader": "Automatic reader",
+    "autoReaderNote": "The phone's own voice. Free.",
+    "autoReaderPlay": "Play with the automatic reader",
     "stop": "Stop",
     "sequel": "Create the next chapter",
     "parentGone": "This story was deleted, so there is no next chapter.",

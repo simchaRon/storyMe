@@ -2,19 +2,19 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts, radius, spacing, touch } from '../theme';
 
-type Option = { value: number; label: string };
+type Option<T> = { value: T; label: string };
 
-type Props = {
+type Props<T> = {
   /** Name for screen readers. */
   accessibilityLabel: string;
-  options: Option[];
-  value: number;
-  onChange: (value: number) => void;
+  options: Option<T>[];
+  value: T;
+  onChange: (value: T) => void;
   disabled?: boolean;
 };
 
 /** A row of round choices. One is selected. Easy to tap, no typing. */
-export function ChoiceChips({ accessibilityLabel, options, value, onChange, disabled }: Props) {
+export function ChoiceChips<T extends string | number>({ accessibilityLabel, options, value, onChange, disabled }: Props<T>) {
   return (
     <View style={styles.row} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
       {options.map((option) => {

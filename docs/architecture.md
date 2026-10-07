@@ -34,7 +34,7 @@ mobile/                Expo app (iOS, Android, Web)
     api/               client.ts (calls, token), errors.ts and errorMessage.ts (error texts)
     auth/              AuthProvider and useAuth()
     i18n/              English and Hebrew text, RTL switch, restart
-    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard, RecordingsCard, NarrationsCard
+    ui/                Screen, Header, Logo, Card, Button, LanguageSwitch, LanguageButton, RequireAuth, confirm, TagInput, ChoiceChips, BedtimeLoader, StoryRow, SeriesCard, RecordingsCard, NarrationsCard
     keywords.ts        Keyword rules (same as the backend)
     storyOptions.ts    Age and length choices and defaults (6, 3 minutes)
     library.ts         Groups chapters into series

@@ -20,7 +20,8 @@ One set of colors, sizes and small components, so every screen looks the same.
 
 ## Components (`mobile/src/ui/`)
 - `Logo`: moon, soundwave and glowing star, drawn with SVG in code (`react-native-svg`). Any size.
-- `Header`: logo and title, plus a Settings button (signed in) or a Back button.
+- `Header`: logo and title, a language button (shows the other language, one tap switches), plus a Settings button (signed in) or a Back button.
+- `LanguageButton`: the one-tap English / עברית button in the `Header`. See [flow-i18n-rtl.md](flow-i18n-rtl.md).
 - `Screen`: midnight background, safe area, scrolling, the header, max width 720 px on wide screens. `header={false}` hides the header, `back` shows Back.
 - `Card`: slate card with 16 px corners and a soft glow.
 - `Button`: variants `primary` (indigo, white text), `accent` (amber, dark text), `secondary` (outline), `danger` (red outline). At least 48 px tall.

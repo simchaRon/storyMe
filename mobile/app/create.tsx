@@ -41,6 +41,12 @@ function CreateContent() {
   const [age, setAge] = useState<number>(DEFAULT_AGE);
   const [length, setLength] = useState<number>(DEFAULT_LENGTH);
   const [torah, setTorah] = useState(false);
+  const appLanguage: Lang = i18n.language.startsWith('he') ? 'he' : 'en';
+  const [storyLanguage, setStoryLanguage] = useState<Lang>(appLanguage); // the language of the story. It can differ from the app language
+  const languageTouched = useRef(false);
+  useEffect(() => {
+    if (!languageTouched.current) setStoryLanguage(appLanguage); // follow the app language until the user chooses
+  }, [appLanguage]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +119,7 @@ function CreateContent() {
           educational_level: level,
           child_age: age,
           length_minutes: length,
-          language: i18n.language.startsWith('he') ? 'he' : ('en' as Lang),
+          language: storyLanguage,
           is_torah_story: torah,
         },
         controller.signal,
@@ -172,6 +178,23 @@ function CreateContent() {
         <Text style={styles.note}>
           {prompt.length} / {MAX_PROMPT_LENGTH}
         </Text>
+      </Card>
+
+      <Card style={styles.card}>
+        <Text style={styles.section}>{t('create.storyLanguage')}</Text>
+        <Text style={styles.note}>{t('create.storyLanguageHint')}</Text>
+        <ChoiceChips<Lang>
+          accessibilityLabel={t('create.storyLanguage')}
+          options={[
+            { value: 'en', label: 'English' },
+            { value: 'he', label: 'עברית' },
+          ]}
+          value={storyLanguage}
+          onChange={(v) => {
+            languageTouched.current = true;
+            setStoryLanguage(v);
+          }}
+        />
       </Card>
 
       <Card style={styles.card}>

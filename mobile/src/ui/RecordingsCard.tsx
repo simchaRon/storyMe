@@ -20,10 +20,12 @@ type Props = {
   onPlayStart: () => void;
   /** Shown when the player could not start. Changes each time it happens. */
   failedToken: number;
+  /** The device voice (automatic reader). When given, it is shown as the first row of the card. */
+  autoReader?: { speaking: boolean; onToggle: () => void };
 };
 
 /** The recordings of one story (people reading it aloud), with play, delete and "record your voice". */
-export function RecordingsCard({ storyId, playback, onPlayStart, failedToken }: Props) {
+export function RecordingsCard({ storyId, playback, onPlayStart, failedToken, autoReader }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -105,6 +107,26 @@ export function RecordingsCard({ storyId, playback, onPlayStart, failedToken }: 
       <Text accessibilityRole="header" style={styles.title}>
         {t('story.voices')}
       </Text>
+
+      {autoReader && (
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={styles.name} numberOfLines={1}>
+              {t('story.autoReader')}
+            </Text>
+            <Text style={styles.note}>{t('story.autoReaderNote')}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={autoReader.speaking ? t('story.stop') : t('story.autoReaderPlay')}
+            accessibilityState={{ selected: autoReader.speaking }}
+            onPress={autoReader.onToggle}
+            style={styles.play}
+          >
+            <Text style={styles.playText}>{autoReader.speaking ? t('record.stop') : t('record.play')}</Text>
+          </Pressable>
+        </View>
+      )}
 
       {recordings.length === 0 && <Text style={styles.note}>{t('story.voicesEmpty')}</Text>}
 

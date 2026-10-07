@@ -7,7 +7,7 @@ import { ActivityIndicator, StyleSheet, Text, TextStyle, View } from 'react-nati
 import { api, ApiError, Story } from '../../src/api/client';
 import { errorMessage } from '../../src/api/errorMessage';
 import { hasVoiceFor } from '../../src/speech';
-import { speechParts } from '../../src/speechText';
+import { speechPlan } from '../../src/speechText';
 import { colors, fonts, spacing, storyLineHeight } from '../../src/theme';
 import { useAudioPlayback } from '../../src/useAudioPlayback';
 import { BedtimeLoader } from '../../src/ui/BedtimeLoader';
@@ -35,7 +35,6 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
   const [story, setStory] = useState<Story | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
-  const [voiceOn, setVoiceOn] = useState(true); // from Settings. If Settings cannot load, show the button.
   const [speaking, setSpeaking] = useState(false);
   const [writing, setWriting] = useState(false); // writing the next chapter
   const [failedToken, setFailedToken] = useState(0); // bumps when a recording or audio could not start
@@ -66,13 +65,6 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
   }, [rawId, reload, t]);
 
   useEffect(() => {
-    api
-      .getSettings()
-      .then((s) => alive.current && setVoiceOn(s.voice_enabled))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
@@ -100,10 +92,10 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
     if (!alive.current || mine !== speechRun.current) return;
 
     const language = story.language === 'he' ? 'he-IL' : 'en-US';
-    const parts = speechParts(story.title, story.content);
+    const parts = speechPlan(story.title, story.content);
     setSpeaking(true);
 
-    // Read one piece at a time. The next piece starts when the last one is done.
+    // Read one sentence at a time. The next one starts after the pause that fits the punctuation.
     const readPart = (i: number) => {
       if (mine !== speechRun.current) return; // stopped, or a newer run started
       if (i >= parts.length) {
@@ -111,9 +103,11 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
         return;
       }
       try {
-        Speech.speak(parts[i], {
+        Speech.speak(parts[i].text, {
           language,
-          onDone: () => readPart(i + 1),
+          onDone: () => {
+            setTimeout(() => readPart(i + 1), parts[i].pauseAfterMs);
+          },
           onStopped: () => {
             if (mine === speechRun.current) setSpeaking(false);
           },
@@ -199,14 +193,13 @@ function StoryContent({ rawId }: { rawId: string | undefined }) {
             </View>
           </Card>
 
-          {voiceOn && (
-            <Button
-              label={t(speaking ? 'story.stop' : 'story.listen')}
-              variant={speaking ? 'secondary' : 'primary'}
-              onPress={() => (speaking ? stopSpeech() : void startSpeech())}
-            />
-          )}
-          <RecordingsCard storyId={story.id} playback={playback} onPlayStart={stopSpeech} failedToken={failedToken} />
+          <RecordingsCard
+            storyId={story.id}
+            playback={playback}
+            onPlayStart={stopSpeech}
+            failedToken={failedToken}
+            autoReader={{ speaking, onToggle: () => (speaking ? stopSpeech() : void startSpeech()) }}
+          />
           <NarrationsCard storyId={story.id} storyLanguage={story.language} playback={playback} onPlayStart={stopSpeech} />
           <Button label={t('story.sequel')} variant="accent" onPress={() => void createSequel()} />
         </>

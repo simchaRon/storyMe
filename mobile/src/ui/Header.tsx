@@ -4,20 +4,25 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '../auth/AuthContext';
 import { colors, fonts, spacing, touch } from '../theme';
+import { LanguageButton, RestartNote, useLanguageToggle } from './LanguageButton';
 import { Logo } from './Logo';
 
-/** Top bar: logo and title on one side, a Settings (or Back) button on the other. */
+/** Top bar: logo and title on one side, a language button and a Settings (or Back) button on the other. */
 export function Header({ back }: { back?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { status } = useAuth();
+  const language = useLanguageToggle();
 
   return (
+    <View style={styles.wrap}>
     <View style={styles.bar}>
       <View style={styles.brand}>
         <Logo size={36} />
         <Text style={styles.title}>{t('app.title')}</Text>
       </View>
+      <View style={styles.actions}>
+      <LanguageButton toggle={language} />
       {back ? (
         <Pressable
           accessibilityRole="button"
@@ -37,11 +42,16 @@ export function Header({ back }: { back?: boolean }) {
           <Text style={styles.actionText}>{t('settings.title')}</Text>
         </Pressable>
       ) : null}
+      </View>
+    </View>
+    <RestartNote toggle={language} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { gap: spacing.sm },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { color: colors.text, fontSize: fonts.body, fontWeight: '700' },
