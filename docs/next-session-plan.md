@@ -15,7 +15,7 @@ DreamTale AI (folder `storyMe`): a bedtime story app for children. Claude writes
 | 3. Brand and Settings | Done (logo, login and register, Settings screen, restart button). 7 app tests pass, it type checks and builds for web. Not checked by eye in a browser or on a phone. |
 | 4. Story generator and viewer | Built. 11 app tests pass, type checks, builds for web. Real Claude tested on the backend. Not checked by eye in the app yet. |
 | 5. Library and favorites | Done (tabs, series cards, heart, delete, load more). Reviewed with the `code-reviewer`, findings fixed. 33 app tests and 66 backend tests pass. Not checked by eye. |
-| 6. Voice | "Read it yourself" (a person records a story, the child plays it) is built and reviewed, not tested on a phone. Voice cloning is not started. See the voice section. |
+| 6. Voice | "Read it yourself" (a person records a story, the child plays it) is built and reviewed, not tested on a phone. English voice cloning is built and tested with the real model (free, Chatterbox on this computer): [flow-cloning.md](flow-cloning.md). Hebrew cloning is not built. |
 
 ## Rules for working here
 - Talk in simple English, short sentences. Short replies.
@@ -128,3 +128,9 @@ Decisions from the owner: there is no provider yet. The user records the voice i
 - Facts found about cloning (official pages, 2026-10-06): the ElevenLabs free plan has **no voice cloning and no API**. Cloning starts at the Starter plan ($6 a month, $1 for the first month at the time). The Cartesia free plan has no cloning either (cloning from its $5 Pro plan, Hebrew support not confirmed). Chatterbox Multilingual (MIT licence, `pip install chatterbox-tts`, Python 3.11, supports Hebrew `he`, clones from a short reference file, runs on CPU but slowly) is the main free open-source option. Its output carries an inaudible watermark. Its Hebrew quality is **not verified**. An older independent test (March 2025) of the first Chatterbox found poor Hebrew, but that was before the multilingual model.
 - Free cloning for **English** is easier: open-source models you run yourself (Chatterbox is MIT). Hosted free tiers do not clone. A GPU server costs money. Other open models (XTTS, F5-TTS, OpenVoice) were not checked here: read their licences before use, some forbid commercial use.
 - If cloning is wanted later: install Chatterbox in its own folder (several GB), clone from a 20 to 30 second recording, let the family listen (no forms needed), and only then build the app part. Generating a story takes minutes on this computer (no GPU), so it must run in the background and be saved.
+
+### Update 2026-10-07: English voice cloning is built
+- Built and committed: [flow-cloning.md](flow-cloning.md). The voice worker is in `tools/tts-worker/` (own Python 3.11 folder, see its README). Start it before using the feature, and set `TTS_URL` in `backend/.env`.
+- Real test done: 134 s of audio in 521 s, the owner said it sounds good. The sample was a synthetic practice clip.
+- Next: record a real family voice in the app and listen. Check the new screens by eye. Decide what to do about speed. Hebrew cloning still needs a provider (or an open model) and the family test.
+- The old dev database had an outdated `voices` table. It was renamed to `backend/dreamtale.db.backup-before-cloning` (not tracked by git). Delete the backup when you do not need it.

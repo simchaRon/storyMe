@@ -12,13 +12,20 @@
 - Story age and length: the child's age (default 6) and the story length (default 3 minutes) can be chosen when creating a story. The story is written for that age and length. Tested with real Claude. Old database files are upgraded by themselves.
 - Free text: the user can describe the story in their own words (up to 800 characters), with or without keywords. The text is cleaned on the server and kept inside its own tags in the Claude prompt. Tested with real Claude, including an attempt to break the rules.
 - Review fixes for age, length and free text: hidden Unicode and look-alike brackets are removed from user text, the sequel prompt is fenced and gets the original request, Torah mode does not let the free text change the story ("no Torah story" is now status 404, so other errors show the right message), long stories use more of the daily limit, the old-database upgrade survives two servers starting together.
-- The app has 53 tests and the backend 113. The app type checks and builds for web.
+- "Read it yourself": a person records a story in the app and the child plays it. Built and reviewed, not tested on a phone. See [flow-recording.md](flow-recording.md).
+- Phase 6, voice cloning for English stories (free, Chatterbox on this computer): voice samples with consent, a voice worker, background audio jobs with progress, safety checks, limits, cleanup, and the app screens. Reviewed with the `code-reviewer` and the findings were fixed. Tested end to end with the real model on 2026-10-07: a 1966-character story became 134 s of audio in 521 s, and the owner said it sounds good. See [flow-cloning.md](flow-cloning.md).
+- Tests now: app 61, backend 225, voice worker 18. The app type checks and builds for web.
 
 ## Next
 - Check the app by eye, on web and on a phone: RTL, colors, Hebrew text, the logo, the slider, typing Hebrew in the idea box, reading aloud in Hebrew, the library. Check that "Restart now" works in a real build (`expo-updates` may need EAS set up).
 - Before a store build: set `ios.bundleIdentifier` and `android.package` in `mobile/app.json`.
 - Alembic migrations before the first Postgres deploy. Also test on Postgres (tests run on SQLite only).
-- Phase 6: voice cloning (a cloned voice reads any story). Not started. Free options are limited: see the voice section in [next-session-plan.md](next-session-plan.md). The family listening test is in [flow-voice-test.md](flow-voice-test.md) and is optional now that "Read it yourself" exists.
+- Voice cloning, next steps (see [flow-cloning.md](flow-cloning.md)):
+  - Test with a real family voice recorded in the app, on a phone. So far only a synthetic practice clip was used.
+  - Check the voices screens and the "Read in a cloned voice" card by eye (web and phone).
+  - Speed: about 4 seconds of work for each second of audio on this computer (no graphics card). Think about a smaller model, a short-story limit, or a free cloud GPU.
+  - Hebrew cloning is not built. The Hebrew test in [flow-voice-test.md](flow-voice-test.md) is still open.
+  - Safety follow-ups: check the spoken consent and the speaker, and encrypt files at rest.
 
 ## Known limits (from the reviews, not fixed yet)
 - There is no second safety check of the story text before it is saved. Safety relies on the prompt (tested on a few cases only).
@@ -34,4 +41,5 @@
 - If the app stops waiting for a story, the server may still save it (the user finds it in the library).
 - `_get_or_create` for settings is in two files and has a rare race. `PUT /settings` should be `PATCH`.
 - The web login token is in local storage. A cookie-based login is a later task.
+- Voice cloning: the consent tick box is not checked against the voice, so someone could record another person. The audio is a large WAV file. The worker runs on one computer and handles one story at a time. Changing the models needs a new database or a migration (`create_all` does not change old tables). Chatterbox needs `setuptools<81`.
 - Recordings are not encrypted by the app. Use an encrypted disk, keep backups short, and write a privacy policy before going public.
