@@ -7,8 +7,8 @@ It is free. The voice is made by [Chatterbox](https://github.com/resemble-ai/cha
 
 ## Status (read this first)
 - Built and tested with a fake voice model: backend, worker, app.
-- **Real model (Chatterbox Turbo, CPU only, 4 threads) ran once on 2026-10-07.** Load 28 s, prepare a voice 20 s, then 4.8 s of audio took 18 s (about 3.7 s of work per second of audio). A 5-minute story would take about 20 minutes. The second timing was broken by a clock jump and is ignored. The voice quality was **not listened to yet**: the family should judge it.
-- **Full run through the backend (2026-10-07):** a 1966-character story (23 pieces) became 134 s of audio in 521 s (about 3.9 s of work per second of audio). The file is 6.4 MB. The voice sample was a synthetic practice clip, not a real person. Listening to the result: not yet judged. Tested with a fresh database, because an old dev database had an outdated `voices` table (`create_all` does not change tables; delete `backend/dreamtale.db` or use a new `DATABASE_URL` when the models change).
+- **Real model (Chatterbox Turbo, CPU only, 4 threads) ran once on 2026-10-07.** Load 28 s, prepare a voice 20 s, then 4.8 s of audio took 18 s (about 3.7 s of work per second of audio). A 5-minute story would take about 20 minutes. The second timing was broken by a clock jump and is ignored. The voice quality was judged good by the user (see the full run below).
+- **Full run through the backend (2026-10-07):** a 1966-character story (23 pieces) became 134 s of audio in 521 s (about 3.9 s of work per second of audio). The file is 6.4 MB. The voice sample was a synthetic practice clip, not a real person. The user listened to it and said it works well. A real family voice is still to be tested. Tested with a fresh database, because an old dev database had an outdated `voices` table (`create_all` does not change tables; delete `backend/dreamtale.db` or use a new `DATABASE_URL` when the models change).
 - Setup note: the worker needs `setuptools<81` (the watermark library needs `pkg_resources`). Without it the model fails to load with "NoneType object is not callable".
 
 ## Steps
