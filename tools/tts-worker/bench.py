@@ -20,22 +20,22 @@ SENTENCES = [
 
 print(f"torch {torch.__version__}, threads {torch.get_num_threads()}, cuda {torch.cuda.is_available()}", flush=True)
 
-t = time.time()
+t = time.perf_counter()
 if which == "turbo":
     from chatterbox.tts_turbo import ChatterboxTurboTTS as Model
 else:
     from chatterbox.tts import ChatterboxTTS as Model
 model = Model.from_pretrained(device="cpu")
-print(f"[{which}] model loaded in {time.time() - t:.0f}s (sample rate {model.sr})", flush=True)
+print(f"[{which}] model loaded in {time.perf_counter() - t:.0f}s (sample rate {model.sr})", flush=True)
 
-t = time.time()
+t = time.perf_counter()
 model.prepare_conditionals(reference)
-print(f"voice prepared in {time.time() - t:.1f}s", flush=True)
+print(f"voice prepared in {time.perf_counter() - t:.1f}s", flush=True)
 
 for i, text in enumerate(SENTENCES, start=1):
-    t = time.time()
+    t = time.perf_counter()
     wav = model.generate(text)  # uses the prepared voice
-    took = time.time() - t
+    took = time.perf_counter() - t
     seconds = wav.shape[-1] / model.sr
     print(f"sentence {i}: {len(text)} chars -> {seconds:.1f}s of audio in {took:.1f}s  (real-time factor {took / seconds:.1f})", flush=True)
     torchaudio.save(f"bench-{which}-{i}.wav", wav, model.sr)

@@ -7,8 +7,8 @@ It is free. The voice is made by [Chatterbox](https://github.com/resemble-ai/cha
 
 ## Status (read this first)
 - Built and tested with a fake voice model: backend, worker, app.
-- **Not yet tested with the real model.** The model (3.9 GB) was still downloading. The real voice quality and the real speed on this computer (no graphics card) are **not measured yet**. The family should judge the quality.
-- Run `tools/tts-worker/bench.py` to measure the speed. Put the result here.
+- **Real model (Chatterbox Turbo, CPU only, 4 threads) ran once on 2026-10-07.** Load 28 s, prepare a voice 20 s, then 4.8 s of audio took 18 s (about 3.7 s of work per second of audio). A 5-minute story would take about 20 minutes. The second timing was broken by a clock jump and is ignored. The voice quality was **not listened to yet**: the family should judge it.
+- Setup note: the worker needs `setuptools<81` (the watermark library needs `pkg_resources`). Without it the model fails to load with "NoneType object is not callable".
 
 ## Steps
 1. The user opens Settings, then "My voices", then adds a voice.

@@ -13,7 +13,7 @@ In PowerShell, in this folder (`tools\tts-worker`):
 python -m venv .bootstrap
 .bootstrap\Scripts\python -m pip install uv
 .bootstrap\Scripts\uv venv --python 3.11 .venv
-.bootstrap\Scripts\uv pip install --python .venv\Scripts\python.exe chatterbox-tts fastapi "uvicorn[standard]" python-multipart av pytest httpx
+.bootstrap\Scripts\uv pip install --python .venv\Scripts\python.exe chatterbox-tts "setuptools<81" fastapi "uvicorn[standard]" python-multipart av pytest httpx
 ```
 
 Why Python 3.11 and `uv`: Chatterbox is built and tested on Python 3.11. `uv` downloads it into this folder and does not change your computer. The folders `.bootstrap` and `.venv` are ignored by git.
