@@ -17,6 +17,7 @@ backend/
     services/
       story_generator.py   Talks to Claude
       recording_store.py   Audio files on disk (recordings, voice samples, cloned-voice audio)
+      mailer.py            Sends e-mail (the password reset link)
       narrator.py          Makes a story into audio with a cloned voice (background job, safety checks)
       media_usage.py       How much audio a user keeps
   tests/               pytest. Claude is faked.

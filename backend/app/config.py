@@ -19,6 +19,17 @@ class Settings(BaseSettings):
     max_recording_mb: int = 25  # one recording
     max_recordings_per_story: int = 5
     max_user_media_mb: int = 300  # all recordings of one user
+    # Forgot password: a reset link is sent by e-mail (SMTP). Empty SMTP_HOST = no e-mail is sent.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""  # the sender address, for example "DreamTale AI <no-reply@example.com>"
+    smtp_starttls: bool = True
+    app_base_url: str = "http://localhost:8081"  # where the app (web) is. The reset link points to it
+    reset_token_minutes: int = 30
+    reset_cooldown_seconds: int = 60  # one reset e-mail per account per this time (stops e-mail floods)
+    dev_log_reset_links: bool = False  # DEV ONLY: with no SMTP, write the e-mail (and the link) to the server log
     # Voice cloning (English). A separate "voice worker" makes the audio (see tools/tts-worker).
     tts_url: str = ""  # address of the worker. Empty = voice cloning is off
     tts_api_key: str = ""  # shared secret with the worker (optional on one computer)

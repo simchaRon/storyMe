@@ -7,6 +7,8 @@ All paths start with `/api`. "Auth" means `Authorization: Bearer <token>`.
 | GET | /health | no | Health check |
 | POST | /auth/register | no | Make account, get token |
 | POST | /auth/login | no | Get token |
+| POST | /auth/forgot-password | no | Send a reset link by e-mail. Always answers 202 with the same text |
+| POST | /auth/reset-password | no | Choose a new password with the token from the e-mail (body: token, password) |
 | GET | /auth/me | yes | Current user |
 | DELETE | /auth/me | yes | Delete account and stories |
 | GET | /settings | yes | Read settings |

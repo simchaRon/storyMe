@@ -30,9 +30,19 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(user_id: int) -> str:
+def _password_version(hashed_password: str) -> str:
+    """A short fingerprint of the password hash. It changes when the password changes."""
+    return hashlib.sha256(hashed_password.encode("utf-8")).hexdigest()[:16]
+
+
+def create_access_token(user_id: int, password_hash: str | None = None) -> str:
+    """The login token. With `password_hash` it also carries the password fingerprint ("pwv"):
+    after a password reset, tokens made before the reset stop working."""
     exp = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-    return jwt.encode({"sub": str(user_id), "exp": exp}, settings.jwt_secret, algorithm=ALGORITHM)
+    claims = {"sub": str(user_id), "exp": exp}
+    if password_hash is not None:
+        claims["pwv"] = _password_version(password_hash)
+    return jwt.encode(claims, settings.jwt_secret, algorithm=ALGORITHM)
 
 
 def get_current_user(
@@ -57,6 +67,9 @@ def get_current_user(
     user = db.get(User, user_id)
     if user is None:
         raise unauthorized
+    pwv = payload.get("pwv")
+    if pwv is not None and not hmac.compare_digest(str(pwv), _password_version(user.hashed_password)):
+        raise unauthorized  # the password was changed after this token was made
     return user
 
 

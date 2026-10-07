@@ -15,6 +15,7 @@ It works in English (left-to-right) and Hebrew (right-to-left).
    - `ANTHROPIC_API_KEY`: your Claude API key.
    - `DAILY_STORY_LIMIT`: stories per user per day (default 20).
    - `MEDIA_DIR`: where voice recordings are saved (default `./media`). Put it on an encrypted disk for real use.
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` and `APP_BASE_URL`: for the "forgot password" e-mail. Without `SMTP_HOST` no e-mail is sent. See [docs/flow-password-reset.md](docs/flow-password-reset.md).
    - `TTS_URL` (and `TTS_API_KEY`): the address of the voice worker, for English voice cloning. Leave empty to turn cloning off. See `tools/tts-worker/README.md`.
 5. Never commit `.env`.
    The app will not start if `JWT_SECRET` is shorter than 32 characters.

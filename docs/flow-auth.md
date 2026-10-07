@@ -26,3 +26,4 @@ Users sign up and log in with email and password. They get a JWT token. The app 
 
 ## Test
 `cd backend` then `.venv\Scripts\python -m pytest tests/test_auth.py`
+- Forgot password: `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`. See [flow-password-reset.md](flow-password-reset.md).

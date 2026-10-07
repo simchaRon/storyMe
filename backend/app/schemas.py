@@ -40,6 +40,22 @@ class RegisterIn(BaseModel):
         return v
 
 
+class ForgotIn(BaseModel):
+    email: EmailStr
+
+
+class ResetIn(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+    password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("password")
+    @classmethod
+    def _bcrypt_limit(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("password is too long (max 72 bytes)")
+        return v
+
+
 class LoginIn(BaseModel):
     email: EmailStr
     password: str = Field(max_length=72)

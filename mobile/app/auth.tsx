@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Link, Redirect } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
@@ -108,6 +108,11 @@ export default function AuthScreen() {
           disabled={busy}
           onPress={() => void submit()}
         />
+        {isLogin && (
+          <Link href="/forgot-password" accessibilityRole="link" style={styles.forgot}>
+            {t('auth.forgotLink')}
+          </Link>
+        )}
         <Button
           label={t(isLogin ? 'auth.switchToRegister' : 'auth.switchToLogin')}
           variant="secondary"
@@ -146,4 +151,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   error: { color: colors.danger, fontSize: fonts.body },
+  forgot: { color: colors.amber, fontSize: fonts.body, textAlign: 'center', paddingVertical: spacing.sm },
 });

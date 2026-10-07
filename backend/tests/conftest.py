@@ -100,6 +100,28 @@ def _register(client, email):
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
+class FakeMailer:
+    """Keeps the e-mails in a list instead of sending them."""
+
+    def __init__(self):
+        self.sent = []  # (to, subject, body)
+        self.fail = False
+
+    def send(self, to, subject, body):
+        if self.fail:
+            raise RuntimeError("smtp is down")
+        self.sent.append((to, subject, body))
+
+
+@pytest.fixture
+def mailer(client):
+    from app.services.mailer import get_mailer
+
+    fake = FakeMailer()
+    app.dependency_overrides[get_mailer] = lambda: fake
+    return fake
+
+
 @pytest.fixture
 def auth(client):
     return _register(client, "one@example.com")

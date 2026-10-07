@@ -49,6 +49,19 @@ class User(Base):
     )
 
 
+class PasswordReset(Base):
+    """A password reset link that was sent. Only the hash of the token is kept, so a stolen database cannot reset anything."""
+
+    __tablename__ = "password_resets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    used_at: Mapped[Optional[datetime]] = mapped_column(UTCDateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=_now)
+
+
 class UserSettings(Base):
     __tablename__ = "user_settings"
 

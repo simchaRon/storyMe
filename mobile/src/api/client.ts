@@ -212,6 +212,10 @@ export const api = {
       body: { email, password },
       auth: false,
     }),
+  forgotPassword: (email: string) =>
+    request<{ detail: string }>('/api/auth/forgot-password', { method: 'POST', body: { email }, auth: false }),
+  resetPassword: (token: string, password: string) =>
+    request<{ detail: string }>('/api/auth/reset-password', { method: 'POST', body: { token, password }, auth: false }),
   me: () => request<User>('/api/auth/me'),
   deleteAccount: () => request<void>('/api/auth/me', { method: 'DELETE' }),
   getSettings: () => request<UserSettings>('/api/settings'),

@@ -12,6 +12,7 @@
   - [Stories](flow-stories.md): list, read, favorite, delete.
   - [Story prompt](flow-story-prompt.md): the Claude prompt and its errors.
   - [Read it yourself](flow-recording.md): a person records a story, the child plays it.
+  - [Forgot password](flow-password-reset.md): a reset link by e-mail, how it is kept safe, how to set up the e-mail.
   - [Voice cloning (English)](flow-cloning.md): a cloned voice reads an English story. How it works, safety rules, how to run it.
   - [Voice](flow-voice.md): placeholder for voice cloning.
   - [Hebrew voice test](flow-voice-test.md): free test with the family, rating page.
