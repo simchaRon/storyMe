@@ -21,7 +21,7 @@
 - Before a store build: set `ios.bundleIdentifier` and `android.package` in `mobile/app.json`.
 - Alembic migrations before the first Postgres deploy. Also test on Postgres (tests run on SQLite only).
 - Voice cloning, next steps (see [flow-cloning.md](flow-cloning.md)):
-  - Test with a real family voice recorded in the app, on a phone. So far only a synthetic practice clip was used.
+  - Done on web (2026-10-07): a voice recorded in the app made a narration that played. Still to do: test on a phone and with a family member's voice.
   - Check the voices screens and the "Read in a cloned voice" card by eye (web and phone).
   - Speed: about 4 seconds of work for each second of audio on this computer (no graphics card). Think about a smaller model, a short-story limit, or a free cloud GPU.
   - Hebrew cloning is not built. The Hebrew test in [flow-voice-test.md](flow-voice-test.md) is still open.

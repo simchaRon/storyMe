@@ -18,3 +18,5 @@ tools/tts-worker/.bootstrap/
 tools/tts-worker/*.log
 tools/tts-worker/*.wav
 tools/tts-worker/.pytest_cache/
+mobile/expo.log
+backend/*.log
