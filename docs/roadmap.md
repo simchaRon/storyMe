@@ -24,6 +24,8 @@
 
 - The create screen has a "Story language" choice (English or עברית), separate from the app language. Not checked by eye yet.
 
+- The top bar shows who is signed in and has a Log out button on every screen. Not checked by eye yet.
+
 ## Next
 - Check the app by eye, on web and on a phone: RTL, colors, Hebrew text, the logo, the slider, typing Hebrew in the idea box, reading aloud in Hebrew, the library. Check that "Restart now" works in a real build (`expo-updates` may need EAS set up).
 - Before a store build: set `ios.bundleIdentifier` and `android.package` in `mobile/app.json`.

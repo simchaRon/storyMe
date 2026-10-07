@@ -11,7 +11,7 @@ import { Logo } from './Logo';
 export function Header({ back }: { back?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { status } = useAuth();
+  const { status, user, signOut } = useAuth();
   const language = useLanguageToggle();
 
   return (
@@ -44,6 +44,16 @@ export function Header({ back }: { back?: boolean }) {
       ) : null}
       </View>
     </View>
+    {status === 'signedIn' && user && (
+      <View style={styles.account}>
+        <Text style={styles.email} numberOfLines={1}>
+          {t('settings.signedInAs')} {user.email}
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('settings.logout')} onPress={() => void signOut()} style={styles.action}>
+          <Text style={styles.logoutText}>{t('settings.logout')}</Text>
+        </Pressable>
+      </View>
+    )}
     <RestartNote toggle={language} />
     </View>
   );
@@ -56,5 +66,8 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { color: colors.text, fontSize: fonts.body, fontWeight: '700' },
   action: { minHeight: touch, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  account: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  email: { flex: 1, color: colors.textMuted, fontSize: fonts.small },
+  logoutText: { color: colors.danger, fontSize: fonts.small },
   actionText: { color: colors.amber, fontSize: fonts.body },
 });
